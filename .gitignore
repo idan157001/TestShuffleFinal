@@ -1,0 +1,31 @@
+# Virtual environment
+# Name of the virtual environment directory
+# Common names include 'venv', '.venv', 'env'
+venv/
+.venv/
+env/
+site
+# Local environment variables containing sensitive info
+.env
+
+*.pyc
+__pycache__/
+
+# Frontend / JavaScript / Tailwind CSS artifacts
+# =====================================
+# Node modules (Crucial! The core of your question, do not commit)
+node_modules/
+
+# Tailwind CSS build output (the compiled CSS file)
+# Adjust these paths based on where your Tailwind PostCSS config outputs the final CSS.
+# Common locations:
+static/css/output.css
+static/css/tailwind.css
+static/dist/
+
+
+examsuffle-firebase-adminsdk-fbsvc-34644cb19a.json
+
+
+TestShuffle/
+Structure.docx
