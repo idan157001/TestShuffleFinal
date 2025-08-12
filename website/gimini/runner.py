@@ -13,9 +13,50 @@ class Gimini_Proccess():
 
     async def run(self):
         prompt = (
-            "Extract the structured data from the following PDF. "
-            "Extract all of the closed questions that have options to answer. "
-            "Don't change the language. If it's not an exam or the PDF is unrelated, return test_data=error."
+            """Extract all closed questions with answer options from the provided exam PDF. if its not a closed question, return {"test_data": "error"} as JSON.
+
+            Rules:
+            - Copy the full question text, including any data, graphs, or tables.
+            - Remove all enumeration or label symbols like "a. ", "b. ", "א. ", etc. from the answers.
+            - Format code snippets or blocks with <pre dir="ltr" style="text-align:left"><code>...</code></pre> tags, preserving tabs and whitespace. Add <br> tags to maintain line breaks.
+            - If the PDF is unrelated or does not contain exam questions, return {"test_data": "error"} as JSON.
+            - The output must be valid JSON exactly matching this schema:
+            - test_data: {
+                test_description: string (e.g., "Physics Exam | 21/06/2025"),
+                test_time: string in Hours and minutes (e.g., "3:30 Hours")
+                }
+            - questions: list of objects with:
+                - question_number: integer
+                - question_data: string (full question text, excluding answers)
+                - answers: list of objects each with:
+                    - answer: string (clean answer text without enumeration)
+
+            Example Input:
+            Question 1: What is the speed of light?
+            a. 3 x 10^8 m/s
+            b. 1.5 x 10^8 m/s
+            c. 9.8 m/s^2
+
+            Example Output:
+            {
+            "test_data": {
+                "test_description": "Physics Exam | 21/06/2025",
+                "test_time": "3 Hours"
+            },
+            "questions": [
+                {
+                "question_number": 1,
+                "question_data": "What is the speed of light?",
+                "answers": [
+                    {"answer": "3 x 10^8 m/s"},
+                    {"answer": "1.5 x 10^8 m/s"},
+                    {"answer": "9.8 m/s^2"}
+                ]
+                }
+            ]
+            }
+
+            Now extract from the following PDF:"""
         )
         
         response = await client.aio.models.generate_content(  

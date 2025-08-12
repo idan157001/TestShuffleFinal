@@ -82,6 +82,7 @@ async def delete_exam(user=Depends(get_current_user), exam_id: str = None):
             headers={"Location": "/"}
         )
     
+
     if not exam_id:
         raise HTTPException(status_code=400, detail="Exam ID is required")
     
@@ -99,7 +100,8 @@ async def delete_exam(user=Depends(get_current_user), exam_id: str = None):
 async def upload_pdf(
     file: UploadFile, 
     request: Request, 
-    user: Optional[dict] = Depends(get_current_user)
+    user: Optional[dict] = Depends(get_current_user),
+
 ):
     """
     Handle PDF file upload with validation and Gemini processing.
@@ -141,26 +143,29 @@ async def upload_pdf(
                 detail="You can only upload up to 5 exams."
             )
 
+        uploader = UploadExamToDB(user)
+
+
         # === Process the file ===
         hashed_file = await FileUpload(file_content, file_size).hash_file()
-        exam_exists = await UploadExamToDB(user).exam_already_exists(hashed_file)
+        exam_exists = await uploader.exam_already_exists(hashed_file)
 
-        if exam_exists == "Exam already exists": # IF exam already exists in the user's exams
+        if exam_exists == "Exam already exists":
             raise HTTPException(
                 status_code=400,
                 detail="This Exam Already exits"
             )
-        elif exam_exists is True: #if exam in database but not in user's exams
+        elif exam_exists is True:
             raise HTTPException(
                 status_code=200,
                 detail="Exam Uploaded Successfully"
             )
-        
+        exam_id = await uploader.save_to_firebase(None, None, None, file.filename)
         gimini_data = await Gimini_Proccess(file_content).call_gimini_progress()
         exam_name = gimini_data.get("test_data", {}).get("test_description", "Unknown Exam")
-        
-        # Save to database and get the exam ID
-        exam_id = await UploadExamToDB(user).save_to_firebase(
+
+        await uploader.save_to_firebase(
+            exam_id=exam_id,
             file_hash=hashed_file,
             data=gimini_data,
             exam_name=exam_name

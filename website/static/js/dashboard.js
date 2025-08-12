@@ -64,10 +64,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const response = await fetch(`/delete_exam/${selectedExamId}`, {
       method: 'DELETE',
     });
-
     if (response.ok) {
       // Remove the card from DOM
       const card = document.getElementById(`exam-card-${selectedExamId}`);
+      console.log(card)
       if (card) card.remove();
 
       // Hide modal and reset

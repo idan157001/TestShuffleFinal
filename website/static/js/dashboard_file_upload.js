@@ -102,10 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-
-
-
-
  // Handle form submission for PDF upload
   document.getElementById('pdf-upload-form').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -136,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const result = await response.json();
-
+        console.log(result);
         if (response.ok) {
           // Hide upload progress
           document.getElementById('upload-progress').classList.add('hidden');
@@ -223,6 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       const loadingCard = document.getElementById(currentLoadingCardId);
       if (loadingCard) {
+
         loadingCard.id = `exam-${examId}`;
         loadingCard.className = 'bg-white dark:bg-gray-800 p-5 rounded-xl shadow hover:shadow-lg transition';
         

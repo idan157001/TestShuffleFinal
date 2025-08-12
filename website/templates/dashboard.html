@@ -222,6 +222,30 @@
     <div id="exams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {% if exams %}
         {% for exam_id, exam_data in exams.items() %}
+
+
+        {% if exam_data.status == 'processing' %}
+        <div id="exam-card-{{ exam_id }} " class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow hover:shadow-lg transition">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white break-words max-w-full">
+              Processing Document
+            </h3>
+            <div class="loading-dots text-blue-600 dark:text-green-400">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{{ exam_data.exam_name }}</p>
+          <div class="mt-4 flex items-center justify-between">
+            <span class="text-sm text-gray-400 dark:text-gray-500">Processing with AI...</span>
+            <div class="text-xs bg-blue-100 dark:bg-green-900/30 text-blue-800 dark:text-green-300 px-3 py-1 rounded">
+              In Progress
+            </div>
+          </div>
+      </div>
+      {% else %}
+        
         <!-- Exam card -->
         <div id="exam-card-{{ exam_id }}" class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow hover:shadow-lg transition">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-white break-words max-w-full">
@@ -233,13 +257,15 @@
                     class="text-xs bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
               Copy Link
             </button>
-            <button id="delete-btn-{{ exam_id }}" data-exam-id="{{ exam_id }}" data-exam-name="{{ exam_data.exam_name }}" class="text-xs bg-red-200 dark:bg-red-700 text-red-900 dark:text-white px-3 py-1 rounded hover:bg-red-300 dark:hover:bg-red-600 transition">
+            <button id="delete-btn-{{ exam_id }}" data-exam-id="{{ exam_id }}" class="text-xs bg-red-200 dark:bg-red-700 text-red-900 dark:text-white px-3 py-1 rounded hover:bg-red-300 dark:hover:bg-red-600 transition">
             Delete
           </button>
           </div>
         </div>
-        {% endfor %}
       {% endif %}
+
+    {% endfor %}
+  {% endif %}
     </div>
   </div>
 
