@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Cookie, HTTPException,status,UploadFile
+from fastapi import APIRouter, Depends, Cookie, HTTPException,status,UploadFile,BackgroundTasks,WebSocket,WebSocketDisconnect
 from fastapi.responses import RedirectResponse, HTMLResponse,JSONResponse
 from jose import jwt, JWTError
 from fastapi.staticfiles import StaticFiles
@@ -6,6 +6,8 @@ from pathlib import Path
 import shutil
 from typing import Optional
 
+import asyncio
+import uuid
 import os
 import json
 from fastapi.templating import Jinja2Templates
@@ -16,9 +18,28 @@ from ..utils.upload_file import FileUpload
 from ..gimini.runner import Gimini_Proccess
 from ..firebase.Exam import *
 router = APIRouter()
+connections = {}
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB in bytes
 JWT_SECRET = os.environ.get("JWT_SECRET")
+
+
+async def set_job_status(job_id: str, status: str, user_id: str, result: dict = None):
+    ref = db.reference(f'jobs/{job_id}')
+    data = {
+        "status": status,
+        "user_id": user_id
+    }
+    if result == "error":
+        data["error"] = "An error occurred during processing"
+    if result is not None:
+        data["result"] = result
+    ref.set(data)
+
+async def get_job_status(job_id: str):
+    ref = db.reference(f'jobs/{job_id}')
+    data = ref.get()
+    return data  # dict or None
 
 
 def get_current_user(access_token: str = Cookie(None)):
@@ -26,7 +47,6 @@ def get_current_user(access_token: str = Cookie(None)):
         return None  # Not logged in
     try:
         payload = jwt.decode(access_token, JWT_SECRET, algorithms=["HS256"])
-        print(payload)
         return payload
     except JWTError:
         return None
@@ -98,96 +118,114 @@ async def delete_exam(user=Depends(get_current_user), exam_id: str = None):
     
 @router.post("/upload-pdf")
 async def upload_pdf(
-    file: UploadFile, 
-    request: Request, 
+    background_tasks: BackgroundTasks,
+    file: UploadFile,
+    request: Request = None,
     user: Optional[dict] = Depends(get_current_user),
-
 ):
-    """
-    Handle PDF file upload with validation and Gemini processing.
-    """
-    # User check
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_307_TEMPORARY_REDIRECT,
-            detail="Not authenticated",
-            headers={"Location": "/"}
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
 
+    file_content = await file.read()
+    file_size = len(file_content)
+
+    uploader = UploadExamToDB(user)
+    check_max = await uploader.check_max_exams()
+    print(file_size)
+    if not check_max:
+        raise HTTPException(status_code=403, detail="You can only upload up to 6 exams.")
+    if file_size == 0:
+        raise HTTPException(status_code=400, detail="File is empty")
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File size exceeds the maximum limit of 10MB")
+    if not file.filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+    
+
+    file_hash = await FileUpload(file_content, file_size).hash_file()
+    exam_exists = await uploader.exam_already_exists(file_hash)
+
+    if exam_exists == "Exam already exists":
+        raise HTTPException(status_code=400, detail="This Exam Already exists")
+
+    job_id = str(uuid.uuid4())
+    print(user)
+    await set_job_status(job_id, "processing", user["sub"])
+
+    # Start async job with all needed params
+    background_tasks.add_task(process_and_notify, job_id, user, file_content, file_size, file_hash, file.filename)
+
+    return {"job_id": job_id, "status": "processing"}
+
+async def process_and_notify(job_id, user, file_content, file_size, file_hash, filename):
+    uploader = UploadExamToDB(user)
+
+    # Call Gemini processing
     try:
-        # === File Type Validation ===
-        if file.content_type != "application/pdf" or not file.filename.lower().endswith(".pdf"):
-            raise HTTPException(
-                status_code=400, 
-                detail="Invalid file type. Only PDF files are allowed."
-            )
-        
-        # === Read and Check File Size ===
-        file_content = await file.read()
-        file_size = len(file_content)
-
-        if file_size > MAX_FILE_SIZE:
-            raise HTTPException(
-                status_code=413,
-                detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB."
-            )
-        
-        # === Reset File Pointer (optional depending on use) ===
-        await file.seek(0)
-
-        #
-        check_max_exams = await UploadExamToDB(user).check_max_exams()
-        if not check_max_exams:
-            raise HTTPException(
-                status_code=403,
-                detail="You can only upload up to 5 exams."
-            )
-
-        uploader = UploadExamToDB(user)
-
-
-        # === Process the file ===
-        hashed_file = await FileUpload(file_content, file_size).hash_file()
-        exam_exists = await uploader.exam_already_exists(hashed_file)
-
-        if exam_exists == "Exam already exists":
-            raise HTTPException(
-                status_code=400,
-                detail="This Exam Already exits"
-            )
-        elif exam_exists is True:
-            raise HTTPException(
-                status_code=200,
-                detail="Exam Uploaded Successfully"
-            )
-        exam_id = await uploader.save_to_firebase(None, None, None, file.filename)
         gimini_data = await Gimini_Proccess(file_content).call_gimini_progress()
+        if not gimini_data:
+            return
         exam_name = gimini_data.get("test_data", {}).get("test_description", "Unknown Exam")
 
-        await uploader.save_to_firebase(
-            exam_id=exam_id,
-            file_hash=hashed_file,
+        # Save exam to firebase with real data
+        exam_id = await uploader.save_to_firebase(
+            file_hash=file_hash,
             data=gimini_data,
             exam_name=exam_name
         )
-        
-        # Return success with exam details for frontend
-        return {
-            "detail": "Upload successful",
-            "examId": exam_id,  # Make sure your UploadExamToDB.save_to_firebase() returns the exam ID
-            "examName": exam_name
-        }
 
-    except HTTPException as e:
-        # Already well-formed, re-raise
-        raise e
+        result = {"examId": exam_id, "examName": exam_name}
 
+        # Update job status in DB
+        await set_job_status(job_id, "done", user["sub"], result)
+    
+        # Notify frontend if connected and delete the job
+        websocket = connections.get(job_id)
+        if websocket:
+            await websocket.send_text("done")
+      
     except Exception as e:
-        # Log the error optionally
-        raise HTTPException(
-            status_code=500,
-            detail=f"An internal error occurred while processing the file: {str(e)}"
-        )
+        # Handle any errors during processing
+        await set_job_status(job_id, "error", user["sub"], {"error": str(e)})
+        websocket = connections.get(job_id)
+        if websocket:
+            await websocket.send_text("error")
 
-    finally:
-        await file.close()
+
+@router.websocket("/ws/{job_id}")
+async def websocket_endpoint(websocket: WebSocket, job_id: str, user: Optional[dict] = Depends(get_current_user)):
+    if not user:
+        await websocket.close(code=1008)  # Policy Violation
+        return
+
+    # Check ownership on connect
+    data = await get_job_status(job_id)
+    if not data or data.get("user_id") != user["sub"]:
+        await websocket.close(code=1008)
+        return
+
+    await websocket.accept()
+    connections[job_id] = websocket
+    try:
+        while True:
+            message = await websocket.receive_text()  # keep alive
+            if message == "ack":
+                db.reference('jobs/{job_id}').delete()
+
+    except WebSocketDisconnect:
+        connections.pop(job_id, None)
+
+@router.get("/job-status/{job_id}")
+async def get_job_status_route(job_id: str, user: Optional[dict] = Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
+    data = await get_job_status(job_id)
+    if not data:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    # Verify ownership
+    if data.get("user_id") != user["sub"]:
+        raise HTTPException(status_code=403, detail="Forbidden: You do not own this job")
+
+    return data

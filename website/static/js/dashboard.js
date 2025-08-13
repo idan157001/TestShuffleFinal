@@ -41,10 +41,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Make sure examsGrid exists before adding listener
   if (examsGrid) {
     examsGrid.addEventListener('click', (event) => {
-      const target = event.target;
-      if (target.tagName === 'BUTTON' && target.id.startsWith('delete-btn-')) {
-        selectedExamId = target.dataset.examId;
-        modalExamName.textContent = target.dataset.examName;
+      const btn = event.target.closest('button[id^="delete-btn-"]');
+      if (btn) {
+        selectedExamId = btn.dataset.examId;
+        modalExamName.textContent = btn.dataset.examName;
         deleteModal.classList.remove('hidden');
       }
     });
@@ -67,7 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (response.ok) {
       // Remove the card from DOM
       const card = document.getElementById(`exam-card-${selectedExamId}`);
-      console.log(card)
       if (card) card.remove();
 
       // Hide modal and reset

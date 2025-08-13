@@ -13,7 +13,8 @@ class Gimini_Proccess():
 
     async def run(self):
         prompt = (
-            """Extract all closed questions with answer options from the provided exam PDF. if its not a closed question, return {"test_data": "error"} as JSON.
+            """Extract all closed questions with answer options from the provided exam PDF.
+            if its not a closed question, return (e.g , {"exam_name":"Physics Exam | 21/06/2025,"status": "error"} as JSON.
 
             Rules:
             - Copy the full question text, including any data, graphs, or tables.
@@ -22,7 +23,7 @@ class Gimini_Proccess():
             - If the PDF is unrelated or does not contain exam questions, return {"test_data": "error"} as JSON.
             - The output must be valid JSON exactly matching this schema:
             - test_data: {
-                test_description: string (e.g., "Physics Exam | 21/06/2025"),
+                test_description: string (e.g., "Physics Exam | 21/06/2025") Do not change the language of the exam name, keep it as is.
                 test_time: string in Hours and minutes (e.g., "3:30 Hours")
                 }
             - questions: list of objects with:
@@ -64,8 +65,7 @@ class Gimini_Proccess():
             contents=[types.Part.from_bytes(data=self.file, mime_type='application/pdf'), prompt],
             config={'response_mime_type': 'application/json', 'response_schema': Main}
         )
-        if response.parsed.test_data == 'error':
-            return False
+        
         return response.parsed
 
 

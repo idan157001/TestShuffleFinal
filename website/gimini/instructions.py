@@ -43,7 +43,7 @@ class TestMeta(BaseModel):
             "Format the date as day/month/year. "
             "Display as: '$name of the exam with all of the data$ | $date of the exam$'."
         ))
-    test_time: str = Field(description="get the exam time in the format of 'hh:mm' (24-hour format).")
+    test_time: str = Field(description="string in Hours and minutes (e.g., '3:30 Hours')")
 
 class Main(BaseModel):
     """
@@ -52,4 +52,5 @@ class Main(BaseModel):
     - 'test_data' should include the exam subject/description, date, and time.
     """
     questions: List[Questions] = Field(description="A list of all closed questions in the exam.")
-    test_data: TestMeta = Field(description="Exam metadata: subject/description and date/time.")
+    test_data: TestMeta = Field(description="Exam metadata: subject and date/time.")
+    status:str = Field(description="Status of the exam processing. If the PDF is unrelated or does not contain exam questions, return 'error'.")

@@ -68,7 +68,10 @@ async def callback(request: Request):
         raise HTTPException(status_code=400, detail="ID token missing from response")
 
     try:
-        idinfo = id_token.verify_oauth2_token(id_token_str, google_requests.Request(), GOOGLE_CLIENT_ID)
+        idinfo = id_token.verify_oauth2_token(id_token_str,
+        google_requests.Request(),
+        GOOGLE_CLIENT_ID,
+        clock_skew_in_seconds=5)  # Allow a small clock skew
     except Exception as e:
         raise HTTPException(status_code=403, detail=f"Invalid ID token: {str(e)}")
 

@@ -34,26 +34,27 @@ class UploadExamToDB():
             return self.pydantic_to_dict(obj.dict())
         return obj
         
-    async def save_to_firebase(self,exam_id,file_hash, data, exam_name):
+    async def save_to_firebase(self,file_hash, data, exam_name):
         """
         Save the exam data to Firebase.
         """
-        if exam_id is None:
-            exam_id = db.reference("exams").child(self.user_id).push({"exam_name":exam_name,"status": "processing"}).key
-            return exam_id
+        
 
         self.file_hash = file_hash  
         self.data = self.pydantic_to_dict(data)  # Convert Pydantic model to dict
         self.exam_name = exam_name
 
-        user_exams_ref = db.reference("exams").child(self.user_id).child(exam_id)
-        user_exams_ref.update({
+        user_exams_ref = db.reference("exams").child(self.user_id)
+        exam_id = user_exams_ref.push({
             "exam_name": self.exam_name,
             "file_hash": self.file_hash,
             "data": self.data,
             "user_email": self.user_email,
             "status":None
         })
+        return exam_id.key  # Return the exam ID
+     
+    
 
     async def check_max_exams(self):
         """
