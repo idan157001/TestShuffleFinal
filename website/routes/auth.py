@@ -19,9 +19,7 @@ FIREBASE_DB_URL = os.environ.get("FIREBASE_DATABASE_URL")
 FIREBASE_JSON = os.environ.get("FIREBASE_JSON")
 
 
-print(URL)
 REDIRECT_URI = URL + "auth/callback"
-print(REDIRECT_URI)
 ALGORITHM = "HS256"
 
 @router.get("/login")

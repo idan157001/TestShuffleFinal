@@ -7,10 +7,7 @@ class UploadExamJobs:
     def __init__(self,job_id:str):
         self.job_id = job_id
         self.ref = db.reference(f'jobs/{self.job_id}')
-        self.status()
 
-    def status(self):
-        print(connections)
 
     async def set_job_status(self, status: str, user_id: str, result: dict = None):
         data = {
@@ -52,7 +49,6 @@ class UploadExamJobs:
         
             # Notify frontend if connected and delete the job
             websocket = connections.get(job_id)
-            print(connections)
             if websocket:
                 await websocket.send_text("done")
         
