@@ -95,7 +95,7 @@ async def callback(request: Request):
         key="access_token",
         value=jwt_token,
         httponly=True,
-        secure=False,  # Change to True in production with HTTPS| PRODUCTION-FLAG
+        secure=True,  # Change to True in production with HTTPS| PRODUCTION-FLAG
         samesite="lax",
         max_age=30 * 24 * 3600,  # 30 days in seconds
         path="/"

@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function connectWebSocket() {
     if (!jobId) return;
 
-    ws = new WebSocket(`ws://${window.location.host}/ws/${jobId}`); //PRODUCTION-FLAG
+    ws = new WebSocket(`wss://${window.location.host}/ws/${jobId}`); //PRODUCTION-FLAG
 
     ws.onmessage = (event) => {
         if (event.data === "done") {
