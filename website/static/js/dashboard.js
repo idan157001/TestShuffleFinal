@@ -1,15 +1,18 @@
 document.addEventListener("DOMContentLoaded", () => {
   const examsGrid = document.getElementById('exams-grid');
 
-  function copyToClipboard(text) {
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        showFlashMessage("Link copied to clipboard!");
-      })
-      .catch(err => {
-        showFlashMessage("Failed to copy: " + err, true);
-      });
-  }
+  
+
+  examsGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-copy-url]');
+      if (!btn) return;
+
+      const url = btn.dataset.copyUrl;
+      navigator.clipboard.writeText(url)
+          .then(() => window.showFlashMessage(`URL copied to clipboard`))
+          .catch(err => console.error("Failed to copy!", err));
+  });
+
 
   function showFlashMessage(message, isError = false) {
     const flash = document.getElementById("flash-message");
@@ -85,6 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-  window.copyToClipboard = copyToClipboard;
-  window.showFlashMessage = showFlashMessage; // Expose to global scope
+window.showFlashMessage = showFlashMessage;
+
 });

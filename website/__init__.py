@@ -7,20 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
-import httpx
-
-@app.on_event("startup")
-async def startup_event():
-    app.state.http_client = httpx.AsyncClient()
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await app.state.http_client.aclose()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-
-
+connections = {}
 
 
 

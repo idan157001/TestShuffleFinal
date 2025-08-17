@@ -230,13 +230,13 @@
         </h3>
 
     <div class="flex items-center justify-between">
-      <a href="http://localhost:8000/exam/{{ exam_id }}" 
+      <a href="{{ URL }}exam/{{ exam_id }}" 
         class="text-blue-600 dark:text-green-400 hover:underline text-sm flex-shrink-0 w-20">
         View PDF
       </a>
 
       <div class="flex space-x-2">
-        <button onclick="copyToClipboard('http://localhost:8000/exam/{{exam_id}}')" 
+      <button  id="copy-btn" data-copy-url="{{ URL }}exam/{{ exam_id }}"
                 class="text-xs bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
           Copy Link
         </button>

@@ -36,7 +36,6 @@ class Questions(BaseModel):
         )
     )
 
-    # correct_answer: str = Field(description="The first answer is the correct one (after cleaning).")
 class TestMeta(BaseModel):
     test_description: str = Field(description=(
             "Extract the exam subject and date from the test data. "

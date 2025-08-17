@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const cancelBtn = document.getElementById('cancel-btn');
   const successMessage = document.getElementById('success-message');
   const form = document.getElementById('pdf-upload-form');
-
+  const URL = window.location.origin; // Base URL for your application
   let selectedFile = null;
   let uploadController = null;
 
@@ -37,12 +37,12 @@ document.addEventListener("DOMContentLoaded", () => {
         showFlashMessage('An error occurred during processing', true);}
 
       if (data.status === "processing") {
-        createLoadingExamCard("Resuming previous upload...");
+        createLoadingExamCard("Uploading Exam...");
         connectWebSocket();
       } else if (data.status === "done") {
-        
         updateLoadingCardToSuccess(jobId, data.result.examName);
         localStorage.removeItem('jobId'); // clear after done
+        
       }
     } catch (e) {
       console.warn("Could not restore job status:", e);
@@ -50,31 +50,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function connectWebSocket() {
+function connectWebSocket() {
     if (!jobId) return;
-    ws = new WebSocket(`ws://${window.location.host}/ws/${jobId}`);
+
+    ws = new WebSocket(`ws://${window.location.host}/ws/${jobId}`); //PRODUCTION-FLAG
 
     ws.onmessage = (event) => {
-      if (event.data === "done") {
-        fetch(`/job-status/${jobId}`).then(r => r.json()).then(data => {
-          if (data.status === "done" && data.result) {
-            updateLoadingCardToSuccess(data.result.examId, data.result.examName);
-            localStorage.removeItem('jobId');
-            ws.send("ack")
-          }
-        });
-        ws.close();
-      }
+        if (event.data === "done") {
+            fetch(`/job-status/${jobId}`)
+              .then(r => r.json())
+              .then(data => {
+                if (data.status === "done" && data.result) {
+                    updateLoadingCardToSuccess(data.result.examId, data.result.examName);
+                    localStorage.removeItem('jobId');
+                    // Send ack only if socket is still open
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send("ack");
+                    }
+                        ws.close();
+                    }
+                });
+        }
     };
 
     ws.onclose = () => {
-      console.log("WebSocket connection closed");
+        console.log("WebSocket connection closed");
     };
 
-    ws.onerror = () => {
-      console.error("WebSocket error");
+    ws.onerror = (err) => {
+        console.error("WebSocket error", err);
     };
-  }
+}
+
   // ======= END ADDED SECTION =======
 
 
@@ -194,6 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (jobId) {
           localStorage.setItem('jobId', jobId);
           connectWebSocket();
+          showFlashMessage("Uploading Exam");
         }
 
         uploadProgress.classList.add('hidden');
@@ -272,9 +280,9 @@ document.addEventListener("DOMContentLoaded", () => {
           ${examName}
         </h3>      
         <div class="mt-4 flex items-center justify-between">
-          <a href="http://127.0.0.1:8000/exam/${examId}" class="text-blue-600 dark:text-green-400 hover:underline text-sm">View PDF</a>
+         <a href="${URL}/exam/${examId}"  class="text-blue-600 dark:text-green-400 hover:underline text-sm">View PDF</a>
 
-          <button onclick="copyToClipboard('http://127.0.0.1:8000/exam/${examId}')" 
+           <button  id="copy-btn" data-copy-url="${URL}/exam/${examId}"
                   class="text-xs bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
             Copy Link
           </button>

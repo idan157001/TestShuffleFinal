@@ -6,24 +6,22 @@ from datetime import datetime, timedelta
 from jose import jwt
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-import firebase_admin
-from firebase_admin import credentials, db
+from website.firebase import db
 import os
 
 router = APIRouter()
 
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+URL = os.environ.get("URL")
 JWT_SECRET = os.environ.get("JWT_SECRET")
 FIREBASE_DB_URL = os.environ.get("FIREBASE_DATABASE_URL")
 FIREBASE_JSON = os.environ.get("FIREBASE_JSON")
 
 
-if not firebase_admin._apps:
-    cred = credentials.Certificate(FIREBASE_JSON) #change it in production remind me
-    firebase_admin.initialize_app(cred, {"databaseURL": FIREBASE_DB_URL})
-
-REDIRECT_URI = "http://localhost:8000/auth/callback"
+print(URL)
+REDIRECT_URI = URL + "auth/callback"
+print(REDIRECT_URI)
 ALGORITHM = "HS256"
 
 @router.get("/login")
@@ -94,12 +92,12 @@ async def callback(request: Request):
     }   
     jwt_token = jwt.encode(payload, JWT_SECRET, algorithm=ALGORITHM)
 
-    response = RedirectResponse(url="http://localhost:8000/dashboard")  # Your frontend URL here
+    response = RedirectResponse(url=URL + "dashboard")  # Your frontend URL here
     response.set_cookie(
         key="access_token",
         value=jwt_token,
         httponly=True,
-        secure=False,  # Change to True in production with HTTPS
+        secure=False,  # Change to True in production with HTTPS| PRODUCTION-FLAG
         samesite="lax",
         max_age=30 * 24 * 3600,  # 30 days in seconds
         path="/"

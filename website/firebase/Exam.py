@@ -1,31 +1,33 @@
-import firebase_admin
-from firebase_admin import credentials, db
-import os 
-
-FIREBASE_DB_URL = os.environ.get("FIREBASE_DATABASE_URL")
-FIREBASE_JSON = os.environ.get("FIREBASE_JSON")
+from . import db
+import os
 
 
-class UploadExamToDB():
-    def __init__(self, user):
-        self.MAX_EXAMS=6 # Maximum number of exams per user
+MAX_EXAMS = 6  # Maximum number of exams per user
+
+
+
+def get_exams_ref():
+    """Return the exams reference safely after initialization."""
+    return db.reference("exams")
+
+
+# --- Upload Exam Class ---
+class UploadExamToDB:
+    def __init__(self, user: dict):
+        self.MAX_EXAMS = MAX_EXAMS
         self.user = user
-        self.user_id = user['sub']
         self.user_email = user.get('email')
-        
+        self.user_id = user['sub']  # User ID from the authentication token
 
-        self.setup_connection()
+        # Each user gets their own exams reference
+        self.exams_ref = get_exams_ref().child(self.user_id)
 
-
-    def setup_connection(self):
-        """
-        Initialize Firebase connection.
-        """
-        if not firebase_admin._apps:
-            cred = credentials.Certificate(FIREBASE_JSON) #change it in production remind me
-            firebase_admin.initialize_app(cred, {"databaseURL": FIREBASE_DB_URL})
+    def get_user_exams(self):
+        """Retrieve all exams for this user."""
+        return self.exams_ref.get() or {}
 
     def pydantic_to_dict(self, obj):
+        """Convert Pydantic model or other objects to a dictionary."""
         if isinstance(obj, list):
             return [self.pydantic_to_dict(i) for i in obj]
         if isinstance(obj, dict):
@@ -33,112 +35,104 @@ class UploadExamToDB():
         if hasattr(obj, "dict") and callable(obj.dict):
             return self.pydantic_to_dict(obj.dict())
         return obj
-        
-    async def save_to_firebase(self,file_hash, data, exam_name):
-        """
-        Save the exam data to Firebase.
-        """
-        
 
-        self.file_hash = file_hash  
-        self.data = self.pydantic_to_dict(data)  # Convert Pydantic model to dict
-        self.exam_name = exam_name
-
-        user_exams_ref = db.reference("exams").child(self.user_id)
-        exam_id = user_exams_ref.push({
-            "exam_name": self.exam_name,
-            "file_hash": self.file_hash,
-            "data": self.data,
+    async def save_to_firebase(self, file_hash: str, data, exam_name: str) -> str:
+        """ 
+        Save exam data to Firebase.
+        Args:
+            file_hash (str): Unique identifier for the exam file.
+            data (Pydantic model): Data to be saved, should be a Pydantic model.
+            exam_name (str): Name of the exam.
+        """
+        data_dict = self.pydantic_to_dict(data)  # Convert Pydantic model to dict
+        exam_id = self.exams_ref.push({
+            "exam_name": exam_name,
+            "file_hash": file_hash,
+            "data": data_dict,
             "user_email": self.user_email,
-            "status":None
+            "status": None
         })
         return exam_id.key  # Return the exam ID
-     
-    
 
-    async def check_max_exams(self):
-        """
-        Check if the user has reached the maximum number of exams.
-        """
-    
-        user_exams_ref = db.reference("exams").child(self.user_id)
-        exams_data = user_exams_ref.get()
+    async def check_max_exams(self) -> bool:
+        """Check if the user has reached the maximum number of exams."""
+        user_exams = self.get_user_exams()
+        return len(user_exams) < self.MAX_EXAMS
 
-        # Check if fewer than 5 exams exist
-        return len(exams_data or {}) < self.MAX_EXAMS
-    
-    async def exam_already_exists(self, file_hash):
-        """
-        Check if an exam with the same file hash already exists for the user.
-        """
-        exams_ref = db.reference("exams")
-        user_exams = exams_ref.child(self.user_id).get() or {}
+    async def same_exam_exists(self, file_hash: str) -> bool:
+        """Check if an exam with the same file hash already exists for the user. If so, return True."""
+        user_exams = self.get_user_exams()
         for exam in user_exams.values():
             if exam.get("file_hash") == file_hash:
-                return "Exam already exists"
-    
-
-        # Check all users' exams
-        all_users_exams = exams_ref.get() or {}
-        for user_id, exams in all_users_exams.items():
-            for exam in exams.values():
-                if exam.get("file_hash") == file_hash:
-                    new_exam = exam.copy()
-                    new_exam['user_email'] = self.user_email
-                    db.reference("exams").child(self.user_id).push(new_exam)
-                    return True
-
+                return True
         return False
-                    
+
+    async def exam_exists_on_other_user(self, file_hash: str) -> bool:
+        """
+        Check if an exam with the same file hash exists for another user.
+        If so, copy it to the current user.
+        Uses Firebase indexing for fast lookup.
+        """
+        exams_ref = get_exams_ref()  # Global exams reference
+        # Query exams where file_hash equals the given hash
+        query_result = exams_ref.order_by_child("file_hash").equal_to(file_hash).get() or {}
+
+        for exam_id, exam_data in query_result.items():
+            # Skip exams already uploaded by this user
+            if exam_data.get("user_id") != self.user_id:
+                # Copy exam to current user
+                new_exam = exam_data.copy()
+                new_exam['user_email'] = self.user_email
+                self.exams_ref.push(new_exam)
+                return True  # Found and copied
+
+        return False  # No matching exam found
 
 
-
-
-
-
-class GetExamFromDB():
-    def __init__(self, user=None):
+# --- Get Exam Class ---
+class GetExamFromDB:
+    def __init__(self, user: dict = None):
         self.user = user
         self.user_id = user['sub'] if user else None
-        self.setup_connection()
-
-    def setup_connection(self):
-        if not firebase_admin._apps:
-            cred = credentials.Certificate(FIREBASE_JSON)  # change it in production
-            firebase_admin.initialize_app(cred, {"databaseURL": FIREBASE_DB_URL})
+        # Each user gets their own exams reference
+        self.exams_ref = get_exams_ref().child(self.user_id) if self.user_id else None
 
     def get_exams(self):
         """
         Retrieve exams from Firebase for the user.
+        Raises:
+            ValueError: If user_id is missing.
         """
         if not self.user_id:
             raise ValueError("User ID is required to get exams for a user.")
-        exams_ref = db.reference("exams").child(self.user_id)
-        return exams_ref.get() or {}
+        return self.exams_ref.get() or {}
 
-    def get_exam_details_by_exam_id(self, exam_id):
+    def get_exam_details_by_exam_id(self, exam_id: str):
         """
         Search all users' exams for a given exam_id.
+        Args:
+            exam_id (str): ID of the exam to find.
+        Returns:
+            dict: Exam data if found, else empty dict.
         """
-        exams_ref = db.reference("exams")
-        all_users_exams = exams_ref.get() or {}
-
-        for user_id, exams in all_users_exams.items():
+        all_exams = get_exams_ref().get() or {}
+        for user_id, exams in all_exams.items():
             if exams and exam_id in exams:
                 return exams[exam_id]
         return {}
-    
-    def delete_exam(self, exam_id):
+
+    def delete_exam(self, exam_id: str) -> bool:
         """
         Delete an exam by exam_id for the user.
+        Args:
+            exam_id (str): ID of the exam to delete.
+        Returns:
+            bool: True if deletion succeeded, else raises ValueError
         """
         if not self.user_id:
             raise ValueError("User ID is required to delete an exam.")
-        
-        if self.user_id and exam_id:
-            try:
-                exam_ref = db.reference("exams").child(self.user_id).child(exam_id)
-                exam_ref.delete()
-                return True
-            except Exception as e:
-                raise ValueError(f"An error occurred while deleting the exam: {str(e)}")
+        try:
+            self.exams_ref.child(exam_id).delete()
+            return True
+        except Exception as e:
+            raise ValueError(f"An error occurred while deleting the exam: {str(e)}")

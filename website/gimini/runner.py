@@ -65,7 +65,6 @@ class Gimini_Proccess():
             contents=[types.Part.from_bytes(data=self.file, mime_type='application/pdf'), prompt],
             config={'response_mime_type': 'application/json', 'response_schema': Main}
         )
-        
         return response.parsed
 
 
@@ -103,7 +102,7 @@ class Gimini_Proccess():
         """Sending Request to gimini and suffle the exam"""
         try:
             data = await self.run()
-            if(not data):
+            if not data:
                 return False
             
             return await self.shuffle_exam(data)
