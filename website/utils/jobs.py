@@ -30,7 +30,7 @@ class UploadExamJobs:
         try:
             gimini_data = await Gimini_Proccess(file_content).call_gimini_progress()
             if not gimini_data:
-                return
+                raise ValueError("Exam Error")
             try:
                 exam_name = gimini_data["test_data"]["test_description"]
             except KeyError:
@@ -53,6 +53,7 @@ class UploadExamJobs:
                 await websocket.send_text("done")
         
         except Exception as e:
+            job = UploadExamJobs(job_id)
             # Handle any errors during processing
             await job.set_job_status("error", user["sub"], {"error": str(e)})
             websocket = connections.get(job_id)

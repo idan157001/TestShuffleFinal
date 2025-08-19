@@ -14,7 +14,7 @@ class Gimini_Proccess():
     async def run(self):
         prompt = (
             """Extract all closed questions with answer options from the provided exam PDF.
-            if its not a closed question, return (e.g , {"exam_name":"Physics Exam | 21/06/2025,"status": "error"} as JSON.
+            If the PDF is unrelated or does not contain exam questions, return {'status':'error'}. as JSON.
 
             Rules:
             - Copy the full question text, including any data, graphs, or tables.
@@ -102,7 +102,7 @@ class Gimini_Proccess():
         """Sending Request to gimini and suffle the exam"""
         try:
             data = await self.run()
-            if not data:
+            if data.status == "error":
                 return False
             
             return await self.shuffle_exam(data)
