@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{% block title %}Exam App{% endblock %}</title>
-  <link href="/static/css/src/output.css" rel="stylesheet" />
-  <script src="../../static/js/base.js"></script>
-  {% block scripts %} {% endblock %}
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+   <title>{% block title %}Exam App{% endblock %} | Your Smart Exam Assistant</title>
+    <meta name="title" content="{% block meta_title %}Exam App - Your Smart Exam Assistant{% endblock %}">
+    <meta name="description" content="{% block meta_description %}Exam Shuffler process with AI-powered analysis and insights{% endblock %}">
+
+    <!--CSS-->
+    <link href="/static/css/src/output.css" rel="stylesheet" />
+    {% block css %} {% endblock %}
+    <!--Scripts -->
+    <script src="../../static/js/base.js"></script>
+    {% block scripts %} {% endblock %}
 </head>
 <body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white">
 

@@ -52,4 +52,4 @@ class Main(BaseModel):
     """
     questions: List[Questions] = Field(description="A list of all closed questions in the exam.")
     test_data: TestMeta = Field(description="Exam metadata: subject and date/time.")
-    status:str = Field(description="Status of the exam processing. If the PDF is unrelated or does not contain exam questions, return 'error'.")
+    status:str = Field(description="Status of the exam processing. If the PDF is unrelated or does not contain closed questions exam, return 'error'.")

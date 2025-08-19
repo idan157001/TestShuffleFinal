@@ -55,26 +55,41 @@ function connectWebSocket() {
 
     ws = new WebSocket(`wss://${window.location.host}/ws/${jobId}`); //PRODUCTION-FLAG
 
-    ws.onmessage = (event) => {
+    ws.onmessage = async (event) => {
         if (event.data === "done") {
-            fetch(`/job-status/${jobId}`)
-              .then(r => r.json())
-              .then(data => {
-                if (data.status === "done" && data.result) {
-                    updateLoadingCardToSuccess(data.result.examId, data.result.examName);
-                    localStorage.removeItem('jobId');
-                    // Send ack only if socket is still open
-                    if (ws.readyState === WebSocket.OPEN) {
-                        ws.send("ack");
+            // 1. Try to fetch job status until it's "done" or max retries reached
+            let maxRetries = 10;
+            let delayMs = 500;
+            let data = null;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(`/job-status/${jobId}`);
+                    data = await response.json();
+                    if (data.status === "done" && data.result) {
+                        updateLoadingCardToSuccess(data.result.examId, data.result.examName);
+                        localStorage.removeItem('jobId');
+                        break;
                     }
-                        ws.close();
-                    }
-                });
+                } catch (e) {
+                    // Optionally log error
+                }
+                await new Promise(res => setTimeout(res, delayMs));
+            }
+            // 2. Only send ack after job status is confirmed and UI updated
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("ack");
+                ws.close();
+            }
         }
-    };
-
-    ws.onclose = () => {
-        console.log("WebSocket connection closed");
+        else if (event.data === "error") {
+            removeLoadingCard();
+            showFlashMessage('Cannot upload this exam', true);
+            localStorage.removeItem('jobId');
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("ack");
+                ws.close();
+            }
+        }
     };
 
     ws.onerror = (err) => {

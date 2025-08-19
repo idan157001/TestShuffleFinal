@@ -20,7 +20,21 @@ URL = os.environ.get("URL")
 
 
 
-
+@router.head("/")
+def head_home():
+    
+    """
+    HEAD endpoint for the home route.
+    Returns only headers without body content.
+    """
+    return HTMLResponse(
+        status_code=200,
+        headers={
+            "Content-Type": "text/html; charset=utf-8",
+            "X-Route-Status": "active",
+            "Cache-Control": "no-cache"
+        }
+    )
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request, user=Depends(get_current_user)):
     if user:
