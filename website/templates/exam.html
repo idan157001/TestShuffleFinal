@@ -34,8 +34,8 @@
           'em': [],
           'i': [],
           'u': [],
-          'code': ['class'],
-          'pre': ['class'],
+          'code': ['class', 'dir', 'style'],   // allow dir/style for code blocks
+          'pre': ['class', 'dir', 'style'],    // allow dir/style for pre blocks
           'h1': ['class'],
           'h2': ['class'],
           'h3': ['class'],
@@ -96,22 +96,61 @@
               } else {
                 element.removeAttribute('class');
               }
+            } else if (attr.name === 'dir') {
+              // Only allow explicit safe direction values
+              const val = attr.value && attr.value.toLowerCase();
+              if (val === 'ltr' || val === 'rtl') {
+                element.setAttribute('dir', val);
+              } else {
+                element.removeAttribute('dir');
+              }
+            } else if (attr.name === 'style') {
+              // Basic safe-style sanitizer: allow only a small set of harmless properties
+              // and reject any values containing url(, expression, javascript:
+              const forbidden = /url\s*\(|expression|javascript:/i;
+              if (forbidden.test(attr.value)) {
+                element.removeAttribute('style');
+              } else {
+                // Keep only allowed properties (text-align, direction, white-space, tab-size)
+                const allowedProps = ['text-align', 'direction', 'white-space', 'tab-size'];
+                const sanitizedStyle = attr.value
+                  .split(';')
+                  .map(decl => decl.trim())
+                  .map(decl => {
+                    if (!decl) return null;
+                    const parts = decl.split(':');
+                    if (parts.length < 2) return null;
+                    const prop = parts[0].trim().toLowerCase();
+                    const val = parts.slice(1).join(':').trim();
+                    if (!allowedProps.includes(prop)) return null;
+                    // reject suspicious values
+                    if (forbidden.test(val)) return null;
+                    return `${prop}: ${val}`;
+                  })
+                  .filter(Boolean)
+                  .join('; ');
+              if (sanitizedStyle) {
+                element.setAttribute('style', sanitizedStyle);
+              } else {
+                element.removeAttribute('style');
+              }
             }
-          });
-
-          // Recursively sanitize children
-          Array.from(element.children).forEach(child => {
-            sanitizeElement(child);
-          });
-        }
-
-        // Sanitize all elements
-        Array.from(temp.children).forEach(child => {
-          sanitizeElement(child);
+          }
         });
 
-        return temp.innerHTML;
+        // Recursively sanitize children
+        Array.from(element.children).forEach(child => {
+          sanitizeElement(child);
+        });
       }
+
+      // Sanitize all elements
+      Array.from(temp.children).forEach(child => {
+        sanitizeElement(child);
+      });
+
+      return temp.innerHTML;
+    }
 
       // Security: Convert plain text with line breaks to HTML
       function formatTextContent(text) {
