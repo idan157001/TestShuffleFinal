@@ -25,7 +25,7 @@ class Questions(BaseModel):
         description=(
             "The full question text. Do not cut any data. "
             "If the question includes additional data, graphs, tables, or any attachments, copy them as well. but dont include the answers options"
-            """ **For code snippets or blocks:** If the content is clearly a code snippet, script, or preformatted text that represents code, wrap it in `<pre dir="ltr" style="text-align:left"><code>...</code></pre>` tags. This ensures proper formatting (monospace font, whitespace preservation). add also <br> to structure the code well. tabs should be kept as \t, and whitespace should be preserved for correct code alignment"""
+            """ **For code snippets or blocks:** If the content is clearly a code snippet, script, or preformatted text that represents code, wrap it in `<pre dir="ltr" style="text-align:left"><code>put the code here</code></pre>` tags. This ensures proper formatting (monospace font, whitespace preservation). add also <br> to structure the code well. tabs should be kept as \t, and whitespace should be preserved for correct code alignment"""
         )
     )
     answers: List[Answers] = Field(

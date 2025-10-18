@@ -7,6 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
   loginBtn.addEventListener("click", () => {
     loginBtn.disabled = true;
     loginBtn.textContent = "Redirecting...";
-    window.location.href = "http://localhost:8000/auth/login";  
+    window.location.href = window.location.origin + "/auth/login";
   });
 });

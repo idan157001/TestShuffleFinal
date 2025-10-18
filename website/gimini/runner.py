@@ -19,7 +19,7 @@ class Gimini_Proccess():
             Rules:
             - Copy the full question text, including any data, graphs, or tables.
             - Remove all enumeration or label symbols like "a. ", "b. ", "א. ", etc. from the answers.
-            - Format code snippets or blocks with <pre dir="ltr" style="text-align:left"><code>...</code></pre> tags, preserving tabs and whitespace. Add <br> tags to maintain line breaks.
+            - Format code snippets or blocks with <pre dir="ltr" style="text-align:left"><code>put the code here</code></pre> tags, preserving tabs and whitespace. Add <br> tags to maintain line breaks.
             - If the PDF is unrelated or does not contain exam questions, return {"test_data": "error"} as JSON.
             - The output must be valid JSON exactly matching this schema:
             - test_data: {
