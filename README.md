@@ -1,6 +1,6 @@
-https://testshufflefinal.onrender.com/
 # Exam Shuffler
 A FastAPI web app that processes exam PDFs using an AI service (Gemini), extracts multiple-choice questions, shuffles answer order, and stores results in Firebase then allows users to test themself
+https://testshufflefinal.onrender.com
 
 ## How it began
 As a student, I noticed that all past exams available for practice were only provided as PDF files, with the first answer always being correct. This made self-testing ineffective, since I could easily recognize the correct answer’s position while practicing.
