@@ -17,137 +17,127 @@
 
       // Security: HTML sanitization with allowlist approach
       function sanitizeHTML(html) {
-        if (typeof html !== 'string') return '';
+      if (typeof html !== 'string') return '';
 
-        // Create a temporary DOM element to parse HTML
-        const temp = document.createElement('div');
-        temp.innerHTML = html;
+      // Create a temporary DOM element to parse HTML
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
 
-        // Allowlist of safe tags and attributes
-        const allowedTags = {
-          'br': [],
-          'p': ['class'],
-          'div': ['class'],
-          'span': ['class'],
-          'strong': [],
-          'b': [],
-          'em': [],
-          'i': [],
-          'u': [],
-          'code': ['class', 'dir', 'style'],   // allow dir/style for code blocks
-          'pre': ['class', 'dir', 'style'],    // allow dir/style for pre blocks
-          'h1': ['class'],
-          'h2': ['class'],
-          'h3': ['class'],
-          'h4': ['class'],
-          'h5': ['class'],
-          'h6': ['class'],
-          'ul': ['class'],
-          'ol': ['class'],
-          'li': ['class'],
-          'blockquote': ['class'],
-          'sub': [],
-          'sup': [],
-          'mark': [],
-          'del': [],
-          'ins': []
-        };
+      // Allowlist of safe tags and attributes
+      const allowedTags = {
+        'br': [],
+        'p': ['class'],
+        'div': ['class'],
+        'span': ['class'],
+        'strong': [],
+        'b': [],
+        'em': [],
+        'i': [],
+        'u': [],
+        'code': ['class', 'dir', 'style'],
+        'pre': ['class', 'dir', 'style'],
+        'h1': ['class'],
+        'h2': ['class'],
+        'h3': ['class'],
+        'h4': ['class'],
+        'h5': ['class'],
+        'h6': ['class'],
+        'ul': ['class'],
+        'ol': ['class'],
+        'li': ['class'],
+        'blockquote': ['class'],
+        'sub': [],
+        'sup': [],
+        'mark': [],
+        'del': [],
+        'ins': []
+      };
 
-        // Safe CSS classes (whitelist approach)
-        const allowedClasses = [
-          'text-red-500', 'text-blue-500', 'text-green-500', 'text-yellow-500',
-          'text-purple-500', 'text-pink-500', 'text-indigo-500', 'text-gray-500',
-          'bg-gray-100', 'bg-gray-200', 'bg-blue-100', 'bg-green-100',
-          'font-bold', 'font-semibold', 'font-medium', 'font-light',
-          'italic', 'underline', 'line-through',
-          'text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl',
-          'mb-1', 'mb-2', 'mb-3', 'mb-4', 'mt-1', 'mt-2', 'mt-3', 'mt-4',
-          'p-1', 'p-2', 'p-3', 'p-4', 'px-1', 'px-2', 'py-1', 'py-2',
-          'rounded', 'rounded-md', 'rounded-lg',
-          'border', 'border-gray-300', 'border-blue-300',
-          'inline-block', 'block'
-        ];
+      // Safe CSS classes (whitelist approach)
+      const allowedClasses = [
+        'text-red-500', 'text-blue-500', 'text-green-500', 'text-yellow-500',
+        'text-purple-500', 'text-pink-500', 'text-indigo-500', 'text-gray-500',
+        'bg-gray-100', 'bg-gray-200', 'bg-blue-100', 'bg-green-100',
+        'font-bold', 'font-semibold', 'font-medium', 'font-light',
+        'italic', 'underline', 'line-through',
+        'text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl',
+        'mb-1', 'mb-2', 'mb-3', 'mb-4', 'mt-1', 'mt-2', 'mt-3', 'mt-4',
+        'p-1', 'p-2', 'p-3', 'p-4', 'px-1', 'px-2', 'py-1', 'py-2',
+        'rounded', 'rounded-md', 'rounded-lg',
+        'border', 'border-gray-300', 'border-blue-300',
+        'inline-block', 'block'
+      ];
 
-        function sanitizeElement(element) {
-          const tagName = element.tagName.toLowerCase();
-          
-          // Remove disallowed tags
-          if (!allowedTags.hasOwnProperty(tagName)) {
-            // Replace with text content for safety
-            const textNode = document.createTextNode(element.textContent || '');
-            element.parentNode.replaceChild(textNode, element);
+      function sanitizeElement(element) {
+        const tagName = element.tagName.toLowerCase();
+
+        // Replace disallowed tags with their text content
+        if (!allowedTags.hasOwnProperty(tagName)) {
+          const textNode = document.createTextNode(element.textContent || '');
+          if (element.parentNode) element.parentNode.replaceChild(textNode, element);
+          return;
+        }
+
+        const allowedAttrs = allowedTags[tagName];
+        const attributes = Array.from(element.attributes);
+
+        attributes.forEach(attr => {
+          const name = attr.name;
+          const value = attr.value;
+
+          if (!allowedAttrs.includes(name)) {
+            element.removeAttribute(name);
             return;
           }
 
-          // Clean attributes
-          const allowedAttrs = allowedTags[tagName];
-          const attributes = Array.from(element.attributes);
-          
-          attributes.forEach(attr => {
-            if (!allowedAttrs.includes(attr.name)) {
-              element.removeAttribute(attr.name);
-            } else if (attr.name === 'class') {
-              // Sanitize class values
-              const classes = attr.value.split(' ').filter(cls => 
-                allowedClasses.includes(cls.trim())
-              );
-              if (classes.length > 0) {
-                element.setAttribute('class', classes.join(' '));
-              } else {
-                element.removeAttribute('class');
-              }
-            } else if (attr.name === 'dir') {
-              // Only allow explicit safe direction values
-              const val = attr.value && attr.value.toLowerCase();
-              if (val === 'ltr' || val === 'rtl') {
-                element.setAttribute('dir', val);
-              } else {
-                element.removeAttribute('dir');
-              }
-            } else if (attr.name === 'style') {
-              // Basic safe-style sanitizer: allow only a small set of harmless properties
-              // and reject any values containing url(, expression, javascript:
-              const forbidden = /url\s*\(|expression|javascript:/i;
-              if (forbidden.test(attr.value)) {
-                element.removeAttribute('style');
-              } else {
-                // Keep only allowed properties (text-align, direction, white-space, tab-size)
-                const allowedProps = ['text-align', 'direction', 'white-space', 'tab-size'];
-                const sanitizedStyle = attr.value
-                  .split(';')
-                  .map(decl => decl.trim())
-                  .map(decl => {
-                    if (!decl) return null;
-                    const parts = decl.split(':');
-                    if (parts.length < 2) return null;
-                    const prop = parts[0].trim().toLowerCase();
-                    const val = parts.slice(1).join(':').trim();
-                    if (!allowedProps.includes(prop)) return null;
-                    // reject suspicious values
-                    if (forbidden.test(val)) return null;
-                    return `${prop}: ${val}`;
-                  })
-                  .filter(Boolean)
-                  .join('; ');
-              if (sanitizedStyle) {
-                element.setAttribute('style', sanitizedStyle);
-              } else {
-                element.removeAttribute('style');
-              }
+          if (name === 'class') {
+            const classes = value.split(/\s+/).map(s => s.trim()).filter(s => allowedClasses.includes(s));
+            if (classes.length) element.setAttribute('class', classes.join(' '));
+            else element.removeAttribute('class');
+            return;
+          }
+
+          if (name === 'dir') {
+            const v = (value || '').toLowerCase();
+            if (v === 'ltr' || v === 'rtl') element.setAttribute('dir', v);
+            else element.removeAttribute('dir');
+            return;
+          }
+
+          if (name === 'style') {
+            const forbidden = /url\s*\(|expression|javascript:/i;
+            if (forbidden.test(value)) {
+              element.removeAttribute('style');
+              return;
             }
+            const allowedProps = ['text-align', 'direction', 'white-space', 'tab-size'];
+            const sanitizedStyle = value
+              .split(';')
+              .map(s => s.trim())
+              .map(decl => {
+                if (!decl) return null;
+                const idx = decl.indexOf(':');
+                if (idx === -1) return null;
+                const prop = decl.slice(0, idx).trim().toLowerCase();
+                const val = decl.slice(idx + 1).trim();
+                if (!allowedProps.includes(prop)) return null;
+                if (forbidden.test(val)) return null;
+                return `${prop}: ${val}`;
+              })
+              .filter(Boolean)
+              .join('; ');
+            if (sanitizedStyle) element.setAttribute('style', sanitizedStyle);
+            else element.removeAttribute('style');
+            return;
           }
         });
 
         // Recursively sanitize children
-        Array.from(element.children).forEach(child => {
-          sanitizeElement(child);
-        });
+        Array.from(element.children).forEach(child => sanitizeElement(child));
       }
 
-      // Sanitize all elements
-      Array.from(temp.children).forEach(child => {
-        sanitizeElement(child);
-      });
+      // Sanitize all top-level children
+      Array.from(temp.children).forEach(child => sanitizeElement(child));
 
       return temp.innerHTML;
     }
@@ -400,6 +390,14 @@
           submitBtn.disabled = true;
           submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
         }
+
+        // --- NEW: remove hover/cursor classes so hover no longer changes color after answer ---
+        const labels = form.querySelectorAll('label');
+        labels.forEach(l => {
+          l.classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700', 'cursor-pointer', 'transition-colors', 'duration-200');
+          l.classList.add('cursor-default'); // neutral cursor
+        });
+        // -------------------------------------------------------------------------------
       }
 
       // Execute with validation
