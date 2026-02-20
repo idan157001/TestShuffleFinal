@@ -5,18 +5,32 @@
 {% block content %}
 
 
-  <div id="exam-container" class="w-6xl mx-auto px-6 py-12 text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 rounded-lg shadow-lg" dir="rtl">
-    <!-- Content will be created via DOM manipulation -->
-  </div>
-  
-  
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const exam = {{ exam | tojson | safe }};
-      const container = document.getElementById('exam-container');
+<div id="exam-container"
+  class="w-6xl mx-auto px-6 py-12 text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 rounded-lg shadow-lg"
+  dir="auto">
+  <!-- Content will be created via DOM manipulation -->
+</div>
 
-      // Security: HTML sanitization with allowlist approach
-      function sanitizeHTML(html) {
+
+<script id="exam-data" type="application/json">
+    {{ exam | tojson | safe }}
+  </script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const examDataElement = document.getElementById('exam-data');
+    const exam = document.getElementById('exam-data') ? JSON.parse(examDataElement.textContent) : {};
+    const container = document.getElementById('exam-container');
+
+    function getDirection(htmlContent) {
+      if (!htmlContent) return 'ltr';
+      // Check for Hebrew characters
+      const text = String(htmlContent).replace(/<[^>]+>/g, '');
+      const hebrew = /[\u0590-\u05FF]/;
+      return hebrew.test(text) ? 'rtl' : 'ltr';
+    }
+
+    // Security: HTML sanitization with allowlist approach
+    function sanitizeHTML(html) {
       if (typeof html !== 'string') return '';
 
       // Create a temporary DOM element to parse HTML
@@ -34,8 +48,8 @@
         'em': [],
         'i': [],
         'u': [],
-        'code': ['class', 'dir', 'style'],
-        'pre': ['class', 'dir', 'style'],
+        'code': ['class', 'dir', 'style'],   // allow dir/style for code blockss
+        'pre': ['class', 'dir', 'style'],    // allow dir/style for pre blocks
         'h1': ['class'],
         'h2': ['class'],
         'h3': ['class'],
@@ -142,125 +156,125 @@
       return temp.innerHTML;
     }
 
-      // Security: Convert plain text with line breaks to HTML
-      function formatTextContent(text) {
-        if (typeof text !== 'string') return '';
-        
-        // First escape any existing HTML to prevent injection
-        const escaped = text
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#x27;');
+    // Security: Convert plain text with line breaks to HTML
+    function formatTextContent(text) {
+      if (typeof text !== 'string') return '';
 
-        // Then convert line breaks and basic formatting
-        return escaped
-          .replace(/\n/g, '<br>')
-          .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
-          .replace(/  /g, '&nbsp;&nbsp;'); // Preserve multiple spaces
+      // First escape any existing HTML to prevent injection
+      const escaped = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+
+      // Then convert line breaks and basic formatting
+      return escaped
+        .replace(/\n/g, '<br>')
+        .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
+        .replace(/  /g, '&nbsp;&nbsp;'); // Preserve multiple spaces
+    }
+
+    // Security: Smart content processing
+    function processContent(content) {
+      if (typeof content !== 'string') return '';
+
+      // Check if content contains HTML tags
+      const hasHTML = /<[^>]+>/.test(content);
+
+      if (hasHTML) {
+        // Content has HTML - sanitize it
+        return sanitizeHTML(content);
+      } else {
+        // Plain text - format for display
+        return formatTextContent(content);
       }
+    }
 
-      // Security: Smart content processing
-      function processContent(content) {
-        if (typeof content !== 'string') return '';
-        
-        // Check if content contains HTML tags
-        const hasHTML = /<[^>]+>/.test(content);
-        
-        if (hasHTML) {
-          // Content has HTML - sanitize it
-          return sanitizeHTML(content);
-        } else {
-          // Plain text - format for display
-          return formatTextContent(content);
+    function validateExamData(examData) {
+      if (!examData || typeof examData !== 'object') return null;
+
+      const validated = {
+        exam_name: processContent(String(examData.exam_name || "Exam Details")),
+        data: {
+          questions: []
         }
-      }
+      };
 
-      function validateExamData(examData) {
-        if (!examData || typeof examData !== 'object') return null;
-        
-        const validated = {
-          exam_name: processContent(String(examData.exam_name || "Exam Details")),
-          data: {
-            questions: []
-          }
-        };
+      if (examData.data && Array.isArray(examData.data.questions)) {
+        validated.data.questions = examData.data.questions
+          .slice(0, 100) // Limit number of questions
+          .map(q => {
+            if (!q || typeof q !== 'object') return null;
 
-        if (examData.data && Array.isArray(examData.data.questions)) {
-          validated.data.questions = examData.data.questions
-            .slice(0, 100) // Limit number of questions
-            .map(q => {
-              if (!q || typeof q !== 'object') return null;
-              
-              const validatedAnswers = [];
-              if (Array.isArray(q.answers)) {
-                validatedAnswers.push(...q.answers
-                  .slice(0, 10) // Limit answers per question
-                  .map(a => {
-                    if (!a || typeof a !== 'object') return null;
-                    const processedAnswer = processContent(String(a.answer || ''));
-                    return processedAnswer ? { answer: processedAnswer } : null;
-                  })
-                  .filter(a => a !== null)
-                );
-              }
-
-              if (validatedAnswers.length === 0) return null;
-
-              const correctAnswerRaw = q.correct_answer && typeof q.correct_answer === 'object' 
-                ? String(q.correct_answer.answer || '')
-                : '';
-              
-              const correctAnswer = processContent(correctAnswerRaw);
-
-              if (!correctAnswer) return null;
-
-              // Check if correct answer exists in answers (compare raw text)
-              const correctAnswerText = correctAnswerRaw;
-              const hasCorrectAnswer = q.answers && q.answers.some(a => 
-                String(a.answer || '') === correctAnswerText
+            const validatedAnswers = [];
+            if (Array.isArray(q.answers)) {
+              validatedAnswers.push(...q.answers
+                .slice(0, 10) // Limit answers per question
+                .map(a => {
+                  if (!a || typeof a !== 'object') return null;
+                  const processedAnswer = processContent(String(a.answer || ''));
+                  return processedAnswer ? { answer: processedAnswer } : null;
+                })
+                .filter(a => a !== null)
               );
+            }
 
-              if (!hasCorrectAnswer) return null;
+            if (validatedAnswers.length === 0) return null;
 
-              return {
-                question_data: processContent(String(q.question_data || "שאלה ללא כותרת")),
-                answers: validatedAnswers,
-                correct_answer: { answer: correctAnswer },
-                correct_answer_raw: correctAnswerText // Keep raw for comparison
-              };
-            })
-            .filter(q => q !== null);
-        }
+            const correctAnswerRaw = q.correct_answer && typeof q.correct_answer === 'object'
+              ? String(q.correct_answer.answer || '')
+              : '';
 
-        return validated;
+            const correctAnswer = processContent(correctAnswerRaw);
+
+            if (!correctAnswer) return null;
+
+            // Check if correct answer exists in answers (compare raw text)
+            const correctAnswerText = correctAnswerRaw;
+            const hasCorrectAnswer = q.answers && q.answers.some(a =>
+              String(a.answer || '') === correctAnswerText
+            );
+
+            if (!hasCorrectAnswer) return null;
+
+            return {
+              question_data: processContent(String(q.question_data || "שאלה ללא כותרת")),
+              answers: validatedAnswers,
+              correct_answer: { answer: correctAnswer },
+              correct_answer_raw: correctAnswerText // Keep raw for comparison
+            };
+          })
+          .filter(q => q !== null);
       }
 
-      // Security: Create DOM elements safely
-      function createElement(tag, className = '') {
-        const element = document.createElement(tag);
-        if (className) element.className = className;
-        return element;
-      }
+      return validated;
+    }
 
-      function setHTMLContent(element, content) {
-        // Use innerHTML only for pre-sanitized content
-        element.innerHTML = content;
-      }
+    // Security: Create DOM elements safely
+    function createElement(tag, className = '') {
+      const element = document.createElement(tag);
+      if (className) element.className = className;
+      return element;
+    }
 
-      function createExamContent(validatedExam) {
-        // Clear container
-        container.innerHTML = '';
+    function setHTMLContent(element, content) {
+      // Use innerHTML only for pre-sanitized content
+      element.innerHTML = content;
+    }
 
-        // Create title
-        const title = createElement('h1', 'text-4xl font-extrabold mb-10 text-center');
-        setHTMLContent(title, validatedExam.exam_name);
-        title.setAttribute('dir', 'rtl');
-        container.appendChild(title);
+    function createExamContent(validatedExam) {
+      // Clear container
+      container.innerHTML = '';
 
-        // Create test time if available
-       var rawTestTime = exam.data.test_data.test_time;
+      // Create title
+      const title = createElement('h1', 'text-4xl font-extrabold mb-10 text-center');
+      setHTMLContent(title, validatedExam.exam_name);
+      title.setAttribute('dir', getDirection(validatedExam.exam_name));
+      container.appendChild(title);
+
+      // Create test time if available
+      const rawTestTime = exam?.data?.test_data?.test_time;
       console.log('Test time:', rawTestTime);
 
       if (rawTestTime) {
@@ -271,149 +285,170 @@
       }
 
 
-        if (validatedExam.data.questions.length === 0) {
-          const noQuestions = createElement('p', 'text-center text-gray-600 dark:text-gray-400');
-          noQuestions.textContent = 'לא נמצאו שאלות למבחן זה.';
-          noQuestions.setAttribute('dir', 'rtl');
-          container.appendChild(noQuestions);
-          return;
-        }
-
-        // Create questions container
-        const questionsContainer = createElement('div', 'space-y-10');
-        container.appendChild(questionsContainer);
-
-        validatedExam.data.questions.forEach((question, i) => {
-          // Question block
-          const questionBlock = createElement('div', 'p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700');
-          questionBlock.setAttribute('dir', 'rtl');
-          questionBlock.id = `question-block-${i}`;
-
-          // Question counter
-          const counter = createElement('div', 'mb-4 text-sm text-gray-500 dark:text-gray-400');
-          counter.textContent = `שאלה ${i + 1} מתוך ${validatedExam.data.questions.length}`;
-          questionBlock.appendChild(counter);
-
-          // Question title with HTML support
-          const questionTitle = createElement('h2', 'text-2xl font-semibold mb-5 leading-relaxed');
-          setHTMLContent(questionTitle, question.question_data);
-          questionBlock.appendChild(questionTitle);
-
-          // Form
-          const form = createElement('form', 'space-y-4');
-          form.id = `form-${i}`;
-          questionBlock.appendChild(form);
-
-          // Answer options
-          question.answers.forEach((option, idx) => {
-            const label = createElement('label', 'flex items-start space-x-3 space-x-reverse cursor-pointer rounded-md p-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 select-none');
-            label.setAttribute('for', `q${i}_a${idx}`);
-            label.id = `label-${i}-${idx}`;
-
-            const input = document.createElement('input');
-            input.type = 'radio';
-            input.id = `q${i}_a${idx}`;
-            input.name = `question_${i}`;
-            input.value = idx;
-            input.className = 'form-radio w-5 h-5 text-blue-600 dark:text-blue-400 cursor-pointer focus:outline-none focus:ring-0 mt-1 flex-shrink-0';
-
-            const span = createElement('span', 'text-lg flex-1 mr-2');
-            setHTMLContent(span, option.answer);
-
-            label.appendChild(input);
-            label.appendChild(span);
-            form.appendChild(label);
-          });
-
-          // Submit button
-          const submitBtn = createElement('button', 'mt-6 px-5 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition');
-          submitBtn.type = 'button';
-          submitBtn.textContent = 'Submit';
-          submitBtn.addEventListener('click', () => submitAnswer(i, validatedExam.data.questions[i]));
-          form.appendChild(submitBtn);
-
-          questionsContainer.appendChild(questionBlock);
-        });
+      if (validatedExam.data.questions.length === 0) {
+        const noQuestions = createElement('p', 'text-center text-gray-600 dark:text-gray-400');
+        noQuestions.textContent = 'לא נמצאו שאלות למבחן זה.';
+        noQuestions.setAttribute('dir', 'rtl');
+        container.appendChild(noQuestions);
+        return;
       }
 
-      // Security: Safe answer submission with proper validation
-      function submitAnswer(questionIndex, question) {
-        const form = document.getElementById(`form-${questionIndex}`);
-        if (!form) return;
+      // Create questions container
+      const questionsContainer = createElement('div', 'space-y-10');
+      container.appendChild(questionsContainer);
 
-        const selectedInput = form.querySelector(`input[name="question_${questionIndex}"]:checked`);
-        
-        // Reset all labels
-        question.answers.forEach((_, idx) => {
-          const label = document.getElementById(`label-${questionIndex}-${idx}`);
-          if (label) {
-            label.classList.remove('bg-green-500', 'bg-red-500', 'text-white', 'border-green-500', 'border-red-500');
+      validatedExam.data.questions.forEach((question, i) => {
+        const qDir = getDirection(question.question_data);
+
+        // Question block
+        const questionBlock = createElement('div', 'p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700');
+        questionBlock.setAttribute('dir', qDir);
+        questionBlock.id = `question-block-${i}`;
+
+        // Question counter
+        const counter = createElement('div', 'mb-4 text-sm text-gray-500 dark:text-gray-400');
+        counter.textContent = `שאלה ${i + 1} מתוך ${validatedExam.data.questions.length}`;
+        counter.setAttribute('dir', 'rtl');
+        questionBlock.appendChild(counter);
+
+        // Question title with HTML support
+        const questionTitle = createElement('h2', 'text-2xl font-semibold mb-5 leading-relaxed');
+        setHTMLContent(questionTitle, question.question_data);
+        questionBlock.appendChild(questionTitle);
+
+        // Form
+        const form = createElement('form', 'space-y-4');
+        form.id = `form-${i}`;
+        questionBlock.appendChild(form);
+
+        // Answer options
+        question.answers.forEach((option, idx) => {
+          const aDir = getDirection(option.answer);
+          const label = createElement('label', 'flex items-start gap-4 cursor-pointer rounded-md p-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 select-none');
+          label.setAttribute('for', `q${i}_a${idx}`);
+          label.setAttribute('dir', aDir);
+          label.id = `label-${i}-${idx}`;
+
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.id = `q${i}_a${idx}`;
+          input.name = `question_${i}`;
+          input.value = idx;
+          input.className = 'form-radio w-5 h-5 text-blue-600 dark:text-blue-400 cursor-pointer focus:outline-none focus:ring-0 mt-1 flex-shrink-0';
+
+          const span = createElement('span', 'text-lg flex-1');
+          setHTMLContent(span, option.answer);
+
+          label.appendChild(input);
+          label.appendChild(span);
+          form.appendChild(label);
+        });
+
+        // Submit button
+        const submitBtn = createElement('button', 'mt-6 px-5 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition');
+        submitBtn.type = 'button';
+        submitBtn.textContent = 'Submit';
+        submitBtn.addEventListener('click', () => submitAnswer(i, validatedExam.data.questions[i]));
+        form.appendChild(submitBtn);
+
+        questionsContainer.appendChild(questionBlock);
+      });
+    }
+
+    // Security: Safe answer submission with proper validation
+    function submitAnswer(questionIndex, question) {
+      const form = document.getElementById(`form-${questionIndex}`);
+      if (!form) return;
+
+      const selectedInput = form.querySelector(`input[name="question_${questionIndex}"]:checked`);
+
+      // Reset all labels
+      question.answers.forEach((_, idx) => {
+        const label = document.getElementById(`label-${questionIndex}-${idx}`);
+        if (label) {
+          label.classList.remove(
+            'bg-green-50', 'bg-red-50', 'dark:bg-green-900/30', 'dark:bg-red-900/30',
+            'border-green-400', 'border-red-400', 'dark:border-green-500', 'dark:border-red-500',
+            'text-green-800', 'text-red-800', 'dark:text-green-200', 'dark:text-red-200'
+          );
+        }
+      });
+
+      if (!selectedInput) return;
+
+      const selectedLabel = selectedInput.closest('label');
+      if (!selectedLabel) return;
+
+      const selectedSpan = selectedLabel.querySelector('span');
+      if (!selectedSpan) return;
+
+      // Compare using innerHTML since we're dealing with formatted content
+      const selectedAnswerHTML = selectedSpan.innerHTML.trim();
+      const correctAnswerHTML = question.correct_answer.answer.trim();
+
+      if (selectedAnswerHTML === correctAnswerHTML) {
+        // Correct answer
+        selectedLabel.classList.add(
+          'bg-green-50', 'dark:bg-green-900/30',
+          'border-green-400', 'dark:border-green-500',
+          'text-green-800', 'dark:text-green-200'
+        );
+      } else {
+        // Wrong answer
+        selectedLabel.classList.add(
+          'bg-red-50', 'dark:bg-red-900/30',
+          'border-red-400', 'dark:border-red-500',
+          'text-red-800', 'dark:text-red-200'
+        );
+
+        // Highlight correct answer
+        question.answers.forEach((answer, idx) => {
+          if (answer.answer.trim() === correctAnswerHTML) {
+            const correctLabel = document.getElementById(`label-${questionIndex}-${idx}`);
+            if (correctLabel) {
+              correctLabel.classList.add(
+                'bg-green-50', 'dark:bg-green-900/30',
+                'border-green-400', 'dark:border-green-500',
+                'text-green-800', 'dark:text-green-200'
+              );
+            }
           }
         });
-
-        if (!selectedInput) return;
-
-        const selectedLabel = selectedInput.closest('label');
-        if (!selectedLabel) return;
-
-        const selectedSpan = selectedLabel.querySelector('span');
-        if (!selectedSpan) return;
-
-        // Compare using innerHTML since we're dealing with formatted content
-        const selectedAnswerHTML = selectedSpan.innerHTML.trim();
-        const correctAnswerHTML = question.correct_answer.answer.trim();
-
-        if (selectedAnswerHTML === correctAnswerHTML) {
-          // Correct answer
-          selectedLabel.classList.add('bg-green-500', 'text-white', 'border-green-500');
-        } else {
-          // Wrong answer
-          selectedLabel.classList.add('bg-red-500', 'text-white', 'border-red-500');
-
-          // Highlight correct answer
-          question.answers.forEach((answer, idx) => {
-            if (answer.answer.trim() === correctAnswerHTML) {
-              const correctLabel = document.getElementById(`label-${questionIndex}-${idx}`);
-              if (correctLabel) {
-                correctLabel.classList.add('bg-green-500', 'text-white', 'border-green-500');
-              }
-            }
-          });
-        }
-
-        // Disable form
-        const radios = form.querySelectorAll('input[type="radio"]');
-        radios.forEach(radio => radio.disabled = true);
-
-        const submitBtn = form.querySelector('button[type="button"]');
-        if (submitBtn) {
-          submitBtn.disabled = true;
-          submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        }
-
-        // --- NEW: remove hover/cursor classes so hover no longer changes color after answer ---
-        const labels = form.querySelectorAll('label');
-        labels.forEach(l => {
-          l.classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700', 'cursor-pointer', 'transition-colors', 'duration-200');
-          l.classList.add('cursor-default'); // neutral cursor
-        });
-        // -------------------------------------------------------------------------------
       }
 
-      // Execute with validation
-      try {
-        const validatedExam = validateExamData(exam);
-        if (validatedExam) {
-          createExamContent(validatedExam);
-        } else {
-          container.textContent = 'Invalid exam data provided.';
-        }
-      } catch (error) {
-        console.error('Error loading exam:', error);
-        container.textContent = 'Error loading exam content.';
-      }
-    }); 
+      // Disable form
+      const radios = form.querySelectorAll('input[type="radio"]');
+      radios.forEach(radio => radio.disabled = true);
 
-  
-  </script>
+      const submitBtn = form.querySelector('button[type="button"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
+
+      // --- NEW: remove hover/cursor classes so hover no longer changes color after answer ---
+      const labels = form.querySelectorAll('label');
+      labels.forEach(l => {
+        l.classList.remove('hover:bg-indigo-50', 'dark:hover:bg-slate-700', 'hover:border-indigo-300', 'dark:hover:border-indigo-500', 'cursor-pointer');
+        l.classList.add('cursor-default'); // neutral cursor
+      });
+      // -------------------------------------------------------------------------------
+    }
+
+    // Execute with validation
+    try {
+      const validatedExam = validateExamData(exam);
+      if (validatedExam) {
+        createExamContent(validatedExam);
+      } else {
+        container.textContent = 'Invalid exam data provided.';
+      }
+    } catch (error) {
+      console.error('Error loading exam:', error);
+      container.textContent = 'Error loading exam content.';
+    }
+  });
+
+
+</script>
 {% endblock %}
