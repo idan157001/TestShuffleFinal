@@ -366,7 +366,11 @@
       question.answers.forEach((_, idx) => {
         const label = document.getElementById(`label-${questionIndex}-${idx}`);
         if (label) {
-          label.classList.remove('bg-green-500', 'bg-red-500', 'text-white', 'border-green-500', 'border-red-500');
+          label.classList.remove(
+            'bg-green-50', 'bg-red-50', 'dark:bg-green-900/30', 'dark:bg-red-900/30',
+            'border-green-400', 'border-red-400', 'dark:border-green-500', 'dark:border-red-500',
+            'text-green-800', 'text-red-800', 'dark:text-green-200', 'dark:text-red-200'
+          );
         }
       });
 
@@ -384,17 +388,29 @@
 
       if (selectedAnswerHTML === correctAnswerHTML) {
         // Correct answer
-        selectedLabel.classList.add('bg-green-500', 'text-white', 'border-green-500');
+        selectedLabel.classList.add(
+          'bg-green-50', 'dark:bg-green-900/30',
+          'border-green-400', 'dark:border-green-500',
+          'text-green-800', 'dark:text-green-200'
+        );
       } else {
         // Wrong answer
-        selectedLabel.classList.add('bg-red-500', 'text-white', 'border-red-500');
+        selectedLabel.classList.add(
+          'bg-red-50', 'dark:bg-red-900/30',
+          'border-red-400', 'dark:border-red-500',
+          'text-red-800', 'dark:text-red-200'
+        );
 
         // Highlight correct answer
         question.answers.forEach((answer, idx) => {
           if (answer.answer.trim() === correctAnswerHTML) {
             const correctLabel = document.getElementById(`label-${questionIndex}-${idx}`);
             if (correctLabel) {
-              correctLabel.classList.add('bg-green-500', 'text-white', 'border-green-500');
+              correctLabel.classList.add(
+                'bg-green-50', 'dark:bg-green-900/30',
+                'border-green-400', 'dark:border-green-500',
+                'text-green-800', 'dark:text-green-200'
+              );
             }
           }
         });
@@ -413,7 +429,7 @@
       // --- NEW: remove hover/cursor classes so hover no longer changes color after answer ---
       const labels = form.querySelectorAll('label');
       labels.forEach(l => {
-        l.classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700', 'cursor-pointer', 'transition-colors', 'duration-200');
+        l.classList.remove('hover:bg-indigo-50', 'dark:hover:bg-slate-700', 'hover:border-indigo-300', 'dark:hover:border-indigo-500', 'cursor-pointer');
         l.classList.add('cursor-default'); // neutral cursor
       });
       // -------------------------------------------------------------------------------
