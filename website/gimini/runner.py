@@ -61,7 +61,7 @@ class Gimini_Proccess():
         )
         
         response = await client.aio.models.generate_content(  
-            model="gemini-3-flash",
+            model="gemini-2.5-flash",
             contents=[types.Part.from_bytes(data=self.file, mime_type='application/pdf'), prompt],
             config={'response_mime_type': 'application/json', 'response_schema': Main}
         )
