@@ -7,7 +7,7 @@
 
 <div id="exam-container"
   class="w-6xl mx-auto px-6 py-12 text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 rounded-lg shadow-lg"
-  dir="rtl">
+  dir="auto">
   <!-- Content will be created via DOM manipulation -->
 </div>
 
@@ -20,6 +20,14 @@
     const examDataElement = document.getElementById('exam-data');
     const exam = document.getElementById('exam-data') ? JSON.parse(examDataElement.textContent) : {};
     const container = document.getElementById('exam-container');
+
+    function getDirection(htmlContent) {
+      if (!htmlContent) return 'ltr';
+      // Check for Hebrew characters
+      const text = String(htmlContent).replace(/<[^>]+>/g, '');
+      const hebrew = /[\u0590-\u05FF]/;
+      return hebrew.test(text) ? 'rtl' : 'ltr';
+    }
 
     // Security: HTML sanitization with allowlist approach
     function sanitizeHTML(html) {
@@ -262,7 +270,7 @@
       // Create title
       const title = createElement('h1', 'text-4xl font-extrabold mb-10 text-center');
       setHTMLContent(title, validatedExam.exam_name);
-      title.setAttribute('dir', 'rtl');
+      title.setAttribute('dir', getDirection(validatedExam.exam_name));
       container.appendChild(title);
 
       // Create test time if available
@@ -290,14 +298,17 @@
       container.appendChild(questionsContainer);
 
       validatedExam.data.questions.forEach((question, i) => {
+        const qDir = getDirection(question.question_data);
+
         // Question block
         const questionBlock = createElement('div', 'p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700');
-        questionBlock.setAttribute('dir', 'rtl');
+        questionBlock.setAttribute('dir', qDir);
         questionBlock.id = `question-block-${i}`;
 
         // Question counter
         const counter = createElement('div', 'mb-4 text-sm text-gray-500 dark:text-gray-400');
         counter.textContent = `שאלה ${i + 1} מתוך ${validatedExam.data.questions.length}`;
+        counter.setAttribute('dir', 'rtl');
         questionBlock.appendChild(counter);
 
         // Question title with HTML support
@@ -312,8 +323,10 @@
 
         // Answer options
         question.answers.forEach((option, idx) => {
-          const label = createElement('label', 'flex items-start space-x-3 space-x-reverse cursor-pointer rounded-md p-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 select-none');
+          const aDir = getDirection(option.answer);
+          const label = createElement('label', 'flex items-start gap-4 cursor-pointer rounded-md p-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 select-none');
           label.setAttribute('for', `q${i}_a${idx}`);
+          label.setAttribute('dir', aDir);
           label.id = `label-${i}-${idx}`;
 
           const input = document.createElement('input');
@@ -323,7 +336,7 @@
           input.value = idx;
           input.className = 'form-radio w-5 h-5 text-blue-600 dark:text-blue-400 cursor-pointer focus:outline-none focus:ring-0 mt-1 flex-shrink-0';
 
-          const span = createElement('span', 'text-lg flex-1 mr-2');
+          const span = createElement('span', 'text-lg flex-1');
           setHTMLContent(span, option.answer);
 
           label.appendChild(input);
