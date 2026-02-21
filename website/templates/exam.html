@@ -4,6 +4,61 @@
 
 {% block content %}
 
+<style>
+  /* ── Answer feedback styles ── */
+  .answer-correct {
+    background: #e6f4ea !important;
+    border-color: #1e8e3e !important;
+    border-left-width: 4px;
+  }
+
+  .answer-wrong {
+    background: #fce8e6 !important;
+    border-color: #d93025 !important;
+    border-left-width: 4px;
+  }
+
+  /* Radio dot styling after submit */
+  .answer-wrong input[type="radio"] {
+    accent-color: #d93025;
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
+  .answer-correct input[type="radio"]:checked {
+    accent-color: #1e8e3e;
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+
+  .answer-neutral-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  /* Dark mode */
+  .dark .answer-correct {
+    background: rgba(30, 142, 62, 0.15) !important;
+    border-color: #34a853 !important;
+  }
+
+  .dark .answer-wrong {
+    background: rgba(217, 48, 37, 0.15) !important;
+    border-color: #ea4335 !important;
+  }
+
+  .dark .answer-wrong input[type="radio"] {
+    accent-color: #ea4335;
+  }
+
+  .dark .answer-correct input[type="radio"]:checked {
+    accent-color: #34a853;
+  }
+
+  .dark .answer-neutral-disabled {
+    opacity: 0.35;
+  }
+</style>
 
 <div id="exam-container"
   class="w-6xl mx-auto px-6 py-12 text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 rounded-lg shadow-lg"
@@ -324,7 +379,7 @@
         // Answer options
         question.answers.forEach((option, idx) => {
           const aDir = getDirection(option.answer);
-          const label = createElement('label', 'flex items-start gap-4 cursor-pointer rounded-md p-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 select-none');
+          const label = createElement('label', 'flex items-start gap-4 cursor-pointer rounded-md p-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 select-none');
           label.setAttribute('for', `q${i}_a${idx}`);
           label.setAttribute('dir', aDir);
           label.id = `label-${i}-${idx}`;
@@ -359,6 +414,10 @@
     function submitAnswer(questionIndex, question) {
       const form = document.getElementById(`form-${questionIndex}`);
       if (!form) return;
+    // ── Answer submission with polished visual feedback ──
+    function submitAnswer(questionIndex, question) {
+      const form = document.getElementById(`form-${questionIndex}`);
+      if (!form) return;
 
       const selectedInput = form.querySelector(`input[name="question_${questionIndex}"]:checked`);
 
@@ -375,7 +434,12 @@
       });
 
       if (!selectedInput) return;
+      const selectedInput = form.querySelector(`input[name="question_${questionIndex}"]:checked`);
+      if (!selectedInput) return;
 
+      const selectedLabel = selectedInput.closest('label');
+      if (!selectedLabel) return;
+      const selectedIdx = parseInt(selectedInput.value, 10);
       const selectedLabel = selectedInput.closest('label');
       if (!selectedLabel) return;
 
@@ -385,40 +449,45 @@
       // Compare using innerHTML since we're dealing with formatted content
       const selectedAnswerHTML = selectedSpan.innerHTML.trim();
       const correctAnswerHTML = question.correct_answer.answer.trim();
+      const isCorrect = selectedAnswerHTML === correctAnswerHTML;
 
-      if (selectedAnswerHTML === correctAnswerHTML) {
-        // Correct answer
-        selectedLabel.classList.add(
-          'bg-green-50', 'dark:bg-green-900/30',
-          'border-green-400', 'dark:border-green-500',
-          'text-green-800', 'dark:text-green-200'
+      // Find correct answer index
+      let correctIdx = -1;
+      question.answers.forEach((answer, idx) => {
+        if (answer.answer.trim() === correctAnswerHTML) correctIdx = idx;
+      });
+
+      // ── Apply styles to every label ──
+      question.answers.forEach((_, idx) => {
+        const label = document.getElementById(`label-${questionIndex}-${idx}`);
+        if (!label) return;
+
+        // Remove hover / interactive classes
+        label.classList.remove(
+          'hover:bg-gray-100', 'dark:hover:bg-gray-700', 'cursor-pointer'
         );
-      } else {
-        // Wrong answer
-        selectedLabel.classList.add(
-          'bg-red-50', 'dark:bg-red-900/30',
-          'border-red-400', 'dark:border-red-500',
-          'text-red-800', 'dark:text-red-200'
+        label.classList.add('cursor-default');
+
+        // Remove any old Tailwind feedback classes
+        label.classList.remove(
+          'bg-green-50', 'bg-red-50', 'dark:bg-green-900/30', 'dark:bg-red-900/30',
+          'border-green-400', 'border-red-400', 'dark:border-green-500', 'dark:border-red-500',
+          'text-green-800', 'text-red-800', 'dark:text-green-200', 'dark:text-red-200'
         );
 
-        // Highlight correct answer
-        question.answers.forEach((answer, idx) => {
-          if (answer.answer.trim() === correctAnswerHTML) {
-            const correctLabel = document.getElementById(`label-${questionIndex}-${idx}`);
-            if (correctLabel) {
-              correctLabel.classList.add(
-                'bg-green-50', 'dark:bg-green-900/30',
-                'border-green-400', 'dark:border-green-500',
-                'text-green-800', 'dark:text-green-200'
-              );
-            }
-          }
-        });
-      }
+        if (idx === selectedIdx && isCorrect) {
+          label.classList.add('answer-correct');
+        } else if (idx === selectedIdx && !isCorrect) {
+          label.classList.add('answer-wrong');
+        } else if (idx === correctIdx && !isCorrect) {
+          label.classList.add('answer-correct');
+        } else {
+          label.classList.add('answer-neutral-disabled');
+        }
+      });
 
-      // Disable form
-      const radios = form.querySelectorAll('input[type="radio"]');
-      radios.forEach(radio => radio.disabled = true);
+      // ── Disable all inputs & submit button ──
+      form.querySelectorAll('input[type="radio"]').forEach(r => r.disabled = true);
 
       const submitBtn = form.querySelector('button[type="button"]');
       if (submitBtn) {
@@ -433,6 +502,12 @@
         l.classList.add('cursor-default'); // neutral cursor
       });
       // -------------------------------------------------------------------------------
+    }
+      const submitBtn = form.querySelector('button[type="button"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
     }
 
     // Execute with validation

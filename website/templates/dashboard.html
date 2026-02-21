@@ -1,18 +1,19 @@
 {% include 'base/base_template.html' %}
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Time To Test - Dashboard</title>
   <link href="../static/css/src/output.css" rel="stylesheet" />
   <style>
-    /* Loading dots animation */
+    /* ── Animations ── */
     .loading-dots {
       display: inline-flex;
       gap: 4px;
     }
-    
+
     .loading-dots span {
       width: 8px;
       height: 8px;
@@ -20,275 +21,631 @@
       background-color: currentColor;
       animation: loading-bounce 1.4s ease-in-out infinite both;
     }
-    
-    .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
-    .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
-    .loading-dots span:nth-child(3) { animation-delay: 0s; }
-    
+
+    .loading-dots span:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+
+    .loading-dots span:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+
+    .loading-dots span:nth-child(3) {
+      animation-delay: 0s;
+    }
+
     @keyframes loading-bounce {
-      0%, 80%, 100% {
+
+      0%,
+      80%,
+      100% {
         transform: scale(0);
         opacity: 0.5;
       }
+
       40% {
         transform: scale(1);
         opacity: 1;
       }
     }
+
+    /* ── Body ── */
+    body {
+      font-size: 16px;
+      padding-bottom: 5rem;
+    }
+
+    /* ── Upload card ── */
+    .upload-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+      overflow: hidden;
+    }
+
+    .dark .upload-card {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      position: relative;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .dark .drop-zone {
+      border-color: #475569;
+    }
+
+    .drop-zone:hover {
+      border-color: #3b82f6;
+    }
+
+    .dark .drop-zone:hover {
+      border-color: #10b981;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .drop-zone-icon {
+      width: 56px;
+      height: 56px;
+      color: #94a3b8;
+      margin: 0 auto 1rem;
+      display: block;
+    }
+
+    .dark .drop-zone-icon {
+      color: #64748b;
+    }
+
+    .drop-zone:hover .drop-zone-icon {
+      color: #3b82f6;
+    }
+
+    .dark .drop-zone:hover .drop-zone-icon {
+      color: #10b981;
+    }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background: #2563eb;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s;
+      width: 100%;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .dark .btn-primary {
+      background: #059669;
+    }
+
+    .dark .btn-primary:hover:not(:disabled) {
+      background: #047857;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #374151;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .dark .btn-secondary {
+      color: #d1d5db;
+      background: #334155;
+      border-color: #475569;
+    }
+
+    .dark .btn-secondary:hover {
+      background: #475569;
+    }
+
+    /* ── Info strip ── */
+    .info-strip {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 1rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1.5rem;
+      font-size: 0.9rem;
+      color: #64748b;
+    }
+
+    .dark .info-strip {
+      background: #0f172a;
+      border-color: #334155;
+      color: #94a3b8;
+    }
+
+    .info-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ── Exam cards ── */
+    .exam-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 1.25rem 1.25rem 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 150px;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+      transition: box-shadow 0.2s, transform 0.15s;
+    }
+
+    .exam-card:hover {
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .dark .exam-card {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    .exam-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #0f172a;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+      word-break: break-word;
+    }
+
+    .dark .exam-title {
+      color: #f1f5f9;
+    }
+
+    .exam-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-view {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2563eb;
+      text-decoration: none;
+      transition: text-decoration 0.1s;
+    }
+
+    .btn-view:hover {
+      text-decoration: underline;
+    }
+
+    .dark .btn-view {
+      color: #10b981;
+    }
+
+    .btn-copy {
+      font-size: 1rem;
+      font-weight: 500;
+      background: #f1f5f9;
+      color: #374151;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.45rem 1rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-copy:hover {
+      background: #e2e8f0;
+    }
+
+    .dark .btn-copy {
+      background: #334155;
+      color: #e2e8f0;
+      border-color: #475569;
+    }
+
+    .dark .btn-copy:hover {
+      background: #475569;
+    }
+
+    .btn-delete {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: #fef2f2;
+      color: #ef4444;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-delete:hover {
+      background: #fee2e2;
+    }
+
+    .dark .btn-delete {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+
+    .dark .btn-delete:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .card-btns-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* ── Exams grid ── */
+    .exams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem 2rem;
+    }
+
+    /* Override so JS .hidden toggle works on elements with inline display:flex */
+    #delete-modal.hidden,
+    #flash-message.hidden {
+      display: none !important;
+    }
+
+    /* Delete modal dark mode */
+    .modal-content {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 360px;
+      margin: 1rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .dark .modal-content {
+      background: #1e293b;
+    }
+
+    .modal-content h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 0.5rem;
+    }
+
+    .dark .modal-content h2 {
+      color: #f1f5f9;
+    }
+
+    .modal-content p {
+      font-size: 0.95rem;
+      color: #64748b;
+      margin-bottom: 1.5rem;
+    }
+
+    .dark .modal-content p {
+      color: #94a3b8;
+    }
+
+    .modal-content p span {
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .dark .modal-content p span {
+      color: #e2e8f0;
+    }
+
+    /* Theme-aware text */
+    .text-heading {
+      color: #0f172a;
+    }
+
+    .dark .text-heading {
+      color: #f1f5f9;
+    }
+
+    .text-sub {
+      color: #64748b;
+    }
+
+    .dark .text-sub {
+      color: #94a3b8;
+    }
   </style>
-  
+
   <script src="../static/js/dashboard.js" defer></script>
-    <script src="../static/js/dashboard_file_upload.js" defer></script>
+  <script src="../static/js/dashboard_file_upload.js" defer></script>
 </head>
-<body class="bg-white text-base dark:bg-gray-900 transition-colors min-h-screen flex flex-col">
 
-  <!-- Header -->
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors min-h-screen">
 
- 
-
-
-  <!-- Main content area -->
-
-
- <!-- Flash message here - FIXED POSITIONING -->
-  <div class="relative max-w-6xl mx-auto px-4">
+  <!-- Flash message -->
   <div id="flash-message"
-    class="fixed top-4 left-1/2 transform -translate-x-1/2 text-center z-50 max-w-xl w-auto px-5 py-3 rounded-lg shadow-lg 
-       text-sm font-semibold
-       opacity-0 pointer-events-none
-       transition-opacity duration-500 ease-in-out hidden">
-      </div>
+    class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 hidden opacity-0 pointer-events-none transition-opacity duration-500 ease-in-out text-white"
+    style="max-width:32rem; width:auto; padding:0.75rem 1.5rem; border-radius:10px;
+           font-size:1rem; font-weight:600; text-align:center;
+           box-shadow:0 4px 16px rgba(0,0,0,0.15);">
   </div>
-</div>
 
-<section class="max-w-2xl mx-auto mt-2">
-    <!-- Header -->
-    <div class="text-center mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-        Upload Document
-      </h1>
-     
-  </div>
-    
+  <!-- ══════════════════════════════
+       UPLOAD SECTION
+  ══════════════════════════════ -->
+  <section style="max-width:680px; margin:0 auto; padding:2rem 1.25rem 0;">
 
-    <!-- Upload Card -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-      
-      <!-- Upload Area -->
-      <div class="p-8">
-        <form id="pdf-upload-form" class="space-y-6">
-          
-          <!-- Drag & Drop Zone -->
-          <div id="drop-zone" 
-               class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center transition-all duration-200 hover:border-blue-400 dark:hover:border-green-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer group">
-            
-            <!-- Upload Icon -->
-            <div class="mb-4">
-              <svg class="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-green-400 transition-colors" 
-                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-              </svg>
-            </div>
+    <div style="text-align:center; margin-bottom:1.5rem;">
+      <h1 style="font-size:2rem; font-weight:700;" class="text-heading">Upload Document</h1>
 
-            <!-- Upload Text -->
-            <div class="space-y-2">
-              <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                Drop your PDF here
-              </h3>
-              <p class="text-gray-500 dark:text-gray-400">
-                or click to browse from your device
-              </p>
-              <p class="text-sm text-gray-400 dark:text-gray-500">
-                Maximum file size: 10MB
-              </p>
-            </div>
+    </div>
 
-            <!-- Hidden File Input -->
-            <input type="file" 
-                   id="pdf-upload" 
-                   accept="application/pdf"
-                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                   aria-label="Upload PDF file" />
+    <div class="upload-card">
+      <div style="padding:1.5rem;">
+        <form id="pdf-upload-form" style="display:flex; flex-direction:column; gap:1.25rem;">
+
+          <!-- Drop zone -->
+          <div id="drop-zone" class="drop-zone">
+            <svg class="drop-zone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <p style="font-size:1.15rem; font-weight:600;" class="text-heading">Drop your PDF here</p>
+            <p style="font-size:0.9rem; margin-top:0.25rem;" class="text-sub">or click to browse from your device</p>
+            <input type="file" id="pdf-upload" accept="application/pdf" aria-label="Upload PDF file" />
           </div>
 
-          <!-- File Info Display (Initially Hidden) -->
-          <div id="file-info" class="hidden bg-blue-50 dark:bg-gray-700/50 rounded-xl p-4 border border-blue-200 dark:border-gray-600">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-                  <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+          <!-- File info (hidden until file selected) -->
+          <div id="file-info" class="hidden"
+            style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:1rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div style="width:42px; height:42px; background:#fee2e2; border-radius:8px;
+                            display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                  <svg style="width:20px; height:20px; color:#dc2626;" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                      d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                      clip-rule="evenodd" />
                   </svg>
                 </div>
                 <div>
-                  <p id="file-name" class="font-medium text-gray-900 dark:text-white"></p>
-                  <p id="file-size" class="text-sm text-gray-500 dark:text-gray-400"></p>
+                  <p id="file-name" style="font-size:0.95rem; font-weight:600; color:#1e293b;" class="dark:text-white">
+                  </p>
+                  <p id="file-size" style="font-size:0.85rem; color:#64748b;" class="dark:text-gray-400"></p>
                 </div>
               </div>
-              <button type="button" id="remove-file" 
-                      class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30"
-                      aria-label="Remove file">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              <button type="button" id="remove-file" aria-label="Remove file"
+                style="background:none; border:none; cursor:pointer; color:#94a3b8; padding:4px; border-radius:50%; transition:color 0.15s;"
+                onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
+                <svg style="width:20px; height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           </div>
 
-          <!-- Progress Bar (Initially Hidden) -->
-          <div id="upload-progress" class="hidden space-y-2">
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-gray-600 dark:text-gray-400">Uploading...</span>
-              <span id="progress-percent" class="text-blue-600 dark:text-green-400 font-medium">100%</span>
+          <!-- Progress bar (hidden) -->
+          <div id="upload-progress" class="hidden" style="display:none;">
+            <div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:0.5rem;">
+              <span style="color:#64748b;" class="dark:text-gray-400">Uploading...</span>
+              <span id="progress-percent" style="color:#2563eb; font-weight:600;"
+                class="dark:text-green-400">100%</span>
             </div>
-            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div id="progress-bar" class="bg-blue-600 dark:bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 100%"></div>
+            <div style="background:#e2e8f0; border-radius:9999px; height:8px;" class="dark:bg-gray-700">
+              <div id="progress-bar"
+                style="background:#2563eb; height:8px; border-radius:9999px; width:100%; transition:width 0.3s;"
+                class="dark:bg-green-500"></div>
             </div>
           </div>
 
-          <!-- Submit Button -->
-          <div class="flex flex-col sm:flex-row gap-3">
-            <button type="submit" id="upload-btn"
-                    disabled
-                    class="flex-1 inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
-                           bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                           dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-500
-                           disabled:hover:bg-blue-600 dark:disabled:hover:bg-green-600">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 12l2 2 4-4"/>
+          <!-- Buttons -->
+          <div style="display:flex; gap:0.75rem; margin-top:0.25rem;">
+            <button type="submit" id="upload-btn" disabled class="btn-primary">
+              <svg style="width:20px; height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 12l2 2 4-4" />
               </svg>
               Process Document
             </button>
-            
-            <button type="button" id="cancel-btn" 
-                    class="px-6 py-3 rounded-xl font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+            <button type="button" id="cancel-btn" class="btn-secondary" style="width:auto; flex-shrink:0;">
               Cancel
             </button>
           </div>
+
         </form>
       </div>
 
-      <!-- Info -->
-      <div class="bg-gray-50 dark:bg-gray-700/50 px-8 py-4 border-t border-gray-200 dark:border-gray-600">
-        <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-            </svg>
-            <span>Secure upload</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span>PDF files only</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-            </svg>
-            <span>Max 10MB</span>
-          </div>
+      <!-- Info strip -->
+      <div class="info-strip">
+        <div class="info-badge">
+          <svg style="width:16px; height:16px; color:#22c55e;" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd" />
+          </svg>
+          Secure upload
+        </div>
+        <div class="info-badge">
+          <svg style="width:16px; height:16px; color:#3b82f6;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          PDF files only
+        </div>
+        <div class="info-badge">
+          <svg style="width:16px; height:16px; color:#a855f7;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          Max 10 MB
         </div>
       </div>
     </div>
 
-    <!-- Success Message (Initially Hidden) -->
-    <div id="success-message" class="hidden mt-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
-          <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+    <!-- Success message -->
+    <div id="success-message" class="hidden"
+      style="margin-top:1rem; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:1rem 1.25rem;">
+      <div style="display:flex; align-items:center; gap:0.75rem;">
+        <div style="width:36px; height:36px; background:#dcfce7; border-radius:50%;
+                    display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg style="width:18px; height:18px; color:#16a34a;" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd" />
           </svg>
         </div>
         <div>
-          <h3 class="font-medium text-green-800 dark:text-green-300">Upload successful!</h3>
-          <p class="text-sm text-green-600 dark:text-green-400">Your document has been processed and is ready for use.</p>
+          <p style="font-size:0.95rem; font-weight:600; color:#15803d;">Upload successful!</p>
+          <p style="font-size:0.875rem; color:#16a34a; margin-top:2px;">Your document has been processed and is ready.
+          </p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════
+       MY EXAMS
+  ══════════════════════════════ -->
+  <section style="max-width:1100px; margin:2.5rem auto 0; padding:0 1.25rem 5rem;">
+
+    <div style="margin-bottom:1.25rem;">
+      <h2 style="font-size:1.5rem; font-weight:700;" class="text-heading">My Exams</h2>
+    </div>
+
+    <div id="exams-grid" class="exams-grid">
+      {% if exams %}
+      {% for exam_id, exam_data in exams.items() %}
+      <div id="exam-card-{{ exam_id }}" class="exam-card">
+        <p class="exam-title">{{ exam_data.exam_name }}</p>
+        <div class="exam-actions">
+          <a href="{{ URL }}exam/{{ exam_id }}" class="btn-view">View PDF</a>
+          <div class="card-btns-right">
+            <button id="copy-btn" data-copy-url="{{ URL }}exam/{{ exam_id }}" class="btn-copy">
+              Copy Link
+            </button>
+            <button id="delete-btn-{{ exam_id }}" data-exam-id="{{ exam_id }}" class="btn-delete"
+              aria-label="Delete exam">
+              <svg style="width:16px; height:16px;" fill="currentColor" viewBox="0 0 18 20">
+                <path
+                  d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
+                  clip-rule="evenodd" fill-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div style="grid-column:1/-1; display:flex; flex-direction:column; align-items:center;
+                  justify-content:center; padding:4rem 1rem; text-align:center;">
+        <svg style="width:56px; height:56px; color:#cbd5e1; margin-bottom:1rem;" fill="none" stroke="currentColor"
+          viewBox="0 0 24 24" class="dark:text-gray-600">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <p style="font-size:1rem; font-weight:600; color:#64748b;" class="dark:text-gray-400">No exams yet</p>
+        <p style="font-size:0.9rem; color:#94a3b8; margin-top:4px;" class="dark:text-gray-500">Upload a PDF above to get
+          started</p>
+      </div>
+      {% endif %}
     </div>
 
   </section>
 
-
-
-<!-- My Exams Section -->
-<section class="p-6 max-w-6xl mx-auto">
-  <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 text-center">My Exams</h2>
-
-  <!-- Container with scroll if too many cards -->
-  <div class="max-h-[80vh] overflow-y-auto pr-2">
-  <div id="exams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% if exams %}
-      {% for exam_id, exam_data in exams.items() %}
-
-      <!-- Exam card -->
-        <div id="exam-card-{{ exam_id }}" class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow hover:shadow-lg transition flex flex-col justify-between min-h-[220px]">
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white break-words max-w-full mb-4">
-          {{ exam_data.exam_name }}
-        </h3>
-
-    <div class="flex items-center justify-between">
-      <a href="{{ URL }}exam/{{ exam_id }}" 
-        class="text-blue-600 dark:text-green-400 hover:underline text-sm flex-shrink-0 w-20">
-        View PDF
-      </a>
-
-      <div class="flex space-x-2">
-      <button  id="copy-btn" data-copy-url="{{ URL }}exam/{{ exam_id }}"
-                class="text-xs bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition">
-          Copy Link
+  <!-- Delete modal -->
+  <div id="delete-modal" class="fixed inset-0 z-50 hidden"
+    style="background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;">
+    <div class="modal-content">
+      <div style="width:52px; height:52px; background:#fef2f2; border-radius:50%;
+                  display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+        <svg style="width:26px; height:26px; color:#ef4444;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </div>
+      <h2>Delete Exam?</h2>
+      <p>
+        This will permanently delete<br>
+        <span id="modal-exam-name"></span>
+      </p>
+      <div style="display:flex; justify-content:center; gap:0.75rem;">
+        <button id="cancel-delete" style="padding:0.6rem 1.5rem; border-radius:10px; font-size:0.95rem; font-weight:500;
+                 cursor:pointer; transition:background 0.15s;" class="btn-secondary">
+          Cancel
         </button>
-
-        <button id="delete-btn-{{ exam_id }}" data-exam-id="{{ exam_id }}" 
-                class="text-xs bg-red-200 dark:bg-red-700 text-red-900 dark:text-white px-3 py-1 rounded hover:bg-red-300 dark:hover:bg-red-600 transition flex items-center justify-center">
-          <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
-            <path d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.52.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z" clip-rule="evenodd" fill-rule="evenodd"></path>
-          </svg>
+        <button id="confirm-delete" style="padding:0.6rem 1.5rem; border-radius:10px; font-size:0.95rem; font-weight:600;
+                       background:#ef4444; color:#fff; border:none; cursor:pointer; transition:background 0.15s;">
+          Delete
         </button>
       </div>
-        </div>
-      </div>
-
-      {% endfor %}
-    {% endif %}
-  </div>
-</div>
-
-
-  <!-- Delete confirmation modal -->
-<div id="delete-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md text-center">
-    <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Delete Exam</h2>
-    <p class="text-sm text-gray-600 dark:text-gray-300 mb-6">
-      <span id="modal-exam-name" class="font-semibold"></span>
-    </p>
-    <div class="flex justify-center gap-3">
-      <button id="cancel-delete" class="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
-      <button id="confirm-delete" class="px-4 py-2 text-sm rounded bg-red-500 text-white hover:bg-red-600">Delete</button>
     </div>
   </div>
-</div>
-</section>
 
+  <!-- Footer -->
+  <footer style="position:fixed; bottom:0; left:0; width:100%; background:#1e293b;
+                 color:#f1f5f9; font-size:1rem; padding:1rem 1rem;
+                 display:flex; justify-content:center; align-items:center;
+                 box-shadow:0 -2px 12px rgba(0,0,0,0.15); z-index:50;">
+    &copy; 2025 Exam App. All rights reserved to&nbsp;
+    <a href="https://www.linkedin.com/in/idan-albam-85b852230/" target="_blank" rel="noopener noreferrer"
+      style="color:#60a5fa; text-decoration:none; font-weight:600; margin-left:2px;"
+      class="dark:text-green-400">Idan</a>
+  </footer>
 
-
-
-
- <footer class="fixed bottom-0 left-0 w-full bg-gray-800 text-white text-sm md:text-base py-3 px-4 flex justify-center items-center shadow-md z-50">
-  &copy; 2025 Exam App. All rights reserved to
-  <a href="https://www.linkedin.com/in/idan-albam-85b852230/"
-     target="_blank"
-     rel="noopener noreferrer"
-     class="text-blue-400 hover:underline dark:text-green-400 ml-1"
-  >Idan</a>
-</footer>
-
-
-  
-<script>
-
-</script>
+  <script></script>
 </body>
+
 </html>
